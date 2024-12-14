@@ -11,6 +11,7 @@ import copy
 from utils.pano import pad_pano, unpad_pano
 from ..modules.utils import WandbLightningModule
 from diffusers import ControlNetModel
+from torch.cuda.amp import autocast
 
 
 class PanoBase(WandbLightningModule):
@@ -300,7 +301,9 @@ class PanoGenerator(PanoBase):
     @torch.no_grad()
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         output_dir = os.path.join(self.logger.save_dir, 'predict', batch['pano_id'][0])
-        self.inference_and_save(batch, output_dir, 'jpg')
+        with autocast():  # Mixed precision
+            self.inference_and_save(batch, output_dir, 'jpg')
+        torch.cuda.empty_cache()  # Clear GPU memory after each batch
 
     @abstractmethod
     def inference_and_save(self, batch, output_dir, ext):

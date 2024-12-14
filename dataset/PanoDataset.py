@@ -225,7 +225,7 @@ class PanoDataModule(L.LightningDataModule):
             pano_height: int = 512,
             uncond_ratio: float = 0.2,
             batch_size: int = 1,
-            num_workers: int = 8,
+            num_workers: int = 2,
             result_dir: str = None,
             rand_rot_img: bool = False,
             rand_flip: bool = True,
