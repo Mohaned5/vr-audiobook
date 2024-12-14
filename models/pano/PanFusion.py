@@ -102,7 +102,6 @@ class PanFusion(PanoGenerator):
         latents, pano_latent, timestep, cameras, images_layout_cond, pano_layout_cond = self.gen_cls_free_guide_pair(
             latents, pano_latent, timestep, batch['cameras'],
             batch.get('images_layout_cond'), pano_layout_cond)
-        self.mv_base_model.enable_gradient_checkpointing()
         noise_pred, pano_noise_pred = self.mv_base_model(
             latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,
             images_layout_cond, pano_layout_cond)
