@@ -159,7 +159,7 @@ class PanoGenerator(PanoBase):
 
     def load_branch(self, add_lora, train_lora, add_cn):
         unet = UNet2DConditionModel.from_pretrained(
-            self.hparams.model_id, subfolder="unet", torch_dtype=torch.float32, use_safetensors=True)
+            self.hparams.model_id, subfolder="unet", torch_dtype=torch.float16, use_safetensors=True)
         unet.enable_xformers_memory_efficient_attention()
         unet.enable_gradient_checkpointing()
 
