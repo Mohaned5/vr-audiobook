@@ -43,102 +43,70 @@ class PanFusion(PanoGenerator):
         return pano_noise, noise
 
     def embed_prompt(self, batch, num_cameras):
-        # Debug shapes
-        print(f"Batch size: {len(batch['prompt'])}, num_cameras: {num_cameras}")
-        
-        # Construct extended prompts
-        extended_pers_prompts = [
-            f"{prompt}. Mood: {batch['mood'][i]}. Tags: {', '.join(batch['tags'][i])}. Lighting: {batch['lighting'][i]}"
-            for i, prompt in enumerate(batch['prompt'])
-        ]
-        pers_prompt_embd = self.encode_text(extended_pers_prompts)
-        
-        # Handle potential shape mismatch
-        if pers_prompt_embd.shape[0] % num_cameras != 0:
-            print("Adjusting num_cameras to match pers_prompt_embd shape.")
-            num_cameras = pers_prompt_embd.shape[0]
-        
-        # Rearrange embedding
-        pers_prompt_embd = rearrange(
-            pers_prompt_embd, 
-            '(b m) l c -> b m l c', 
-            b=pers_prompt_embd.shape[0] // num_cameras, 
-            m=num_cameras
-        )
+        # Adjusted to use the new prompt construction
+        if self.hparams.use_pers_prompt:
+            pers_prompt = self.get_pers_prompt(batch)
+            # pers_prompt should be a list of strings (one per camera), so join them if needed:
+            # If encode_text expects a list of strings for (b*m), flatten if needed:
+            pers_prompt_flat = sum([[p] for p in pers_prompt], [])
+            pers_prompt_embd = self.encode_text(pers_prompt_flat)
+            pers_prompt_embd = rearrange(pers_prompt_embd, '(b m) l c -> b m l c', m=num_cameras)
+        else:
+            pers_prompt_embd = self.encode_text('')
+            pers_prompt_embd = pers_prompt_embd[:, None].repeat(1, num_cameras, 1, 1)
 
-        pano_prompt_embd = self.encode_text(batch['pano_prompt'])
-        pano_prompt_embd = pano_prompt_embd[:, None]
+        if self.hparams.use_pano_prompt:
+            pano_prompt = self.get_pano_prompt(batch)
+            pano_prompt_embd = self.encode_text(pano_prompt)
+            pano_prompt_embd = pano_prompt_embd[:, None]
+        else:
+            pano_prompt_embd = self.encode_text('')
+            pano_prompt_embd = pano_prompt_embd[:, None]
 
         return pers_prompt_embd, pano_prompt_embd
 
-
-
-
     def training_step(self, batch, batch_idx):
         device = batch['images'].device
-
-        # Encode images into latents
         latents = self.encode_image(batch['images'], self.vae)
         b, m, c, h, w = latents.shape
 
-        # Encode panoramic images into latents
         pano_pad = self.pad_pano(batch['pano'])
         pano_latent_pad = self.encode_image(pano_pad, self.vae)
         pano_latent = self.unpad_pano(pano_latent_pad, latent=True)
+        # # test encoded pano latent
+        # pano_pad = ((pano_pad[0, 0] + 1) * 127.5).cpu().numpy().astype(np.uint8)
+        # pano = ((batch['pano'][0, 0] + 1) * 127.5).cpu().numpy().astype(np.uint8)
+        # pano_decode = self.decode_latent(pano_latent, self.vae)[0, 0]
 
-        # Sample timesteps
-        t = torch.randint(0, self.scheduler.config.num_train_timesteps, (b,), device=latents.device).long()
-
-        # Embed prompts, now enriched with metadata
+        t = torch.randint(0, self.scheduler.config.num_train_timesteps,
+                          (b,), device=latents.device).long()
         pers_prompt_embd, pano_prompt_embd = self.embed_prompt(batch, m)
-
-        # Initialize noise for training
         pano_noise, noise = self.init_noise(
             b, *pano_latent.shape[-2:], h, w, batch['cameras'], device)
 
-        # Add noise to latents
         noise_z = self.scheduler.add_noise(latents, noise, t)
         pano_noise_z = self.scheduler.add_noise(pano_latent, pano_noise, t)
         t = t[:, None].repeat(1, m)
 
-        # Forward pass with the model, including metadata-enhanced embeddings
         denoise, pano_denoise = self.mv_base_model(
             noise_z, pano_noise_z, t, pers_prompt_embd, pano_prompt_embd, batch['cameras'],
-            batch.get('images_layout_cond'), batch.get('pano_layout_cond')
-        )
+            batch.get('images_layout_cond'), batch.get('pano_layout_cond'))
 
-        # Compute the losses
+        # eps mode
         loss_pers = torch.nn.functional.mse_loss(denoise, noise)
         loss_pano = torch.nn.functional.mse_loss(pano_denoise, pano_noise)
         loss = loss_pers + loss_pano
-
-        # Log losses
         self.log('train/loss', loss, prog_bar=False)
         self.log('train/loss_pers', loss_pers, prog_bar=True)
         self.log('train/loss_pano', loss_pano, prog_bar=True)
-
-        # Log additional metadata (optional, useful for debugging or visualisation)
-        if batch_idx % self.trainer.log_every_n_steps == 0:
-            self.log_metadata(batch)
-
         return loss
-
-    def log_metadata(self, batch):
-        """Log metadata like mood, tags, lighting for debugging purposes."""
-        for i in range(min(len(batch['mood']), 5)):  # Log up to 5 samples per batch
-            self.logger.experiment.log({
-                f"train/mood_{i}": batch['mood'][i],
-                f"train/tags_{i}": ', '.join(batch['tags'][i]),
-                f"train/negative_tags_{i}": ', '.join(batch['negative_tags'][i]),
-                f"train/lighting_{i}": batch['lighting'][i],
-            })
-
 
     @torch.no_grad()
     def forward_cls_free(self, latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, batch, pano_layout_cond=None):
         latents, pano_latent, timestep, cameras, images_layout_cond, pano_layout_cond = self.gen_cls_free_guide_pair(
             latents, pano_latent, timestep, batch['cameras'],
             batch.get('images_layout_cond'), pano_layout_cond)
+
         noise_pred, pano_noise_pred = self.mv_base_model(
             latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,
             images_layout_cond, pano_layout_cond)

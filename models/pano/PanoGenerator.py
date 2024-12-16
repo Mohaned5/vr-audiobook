@@ -43,20 +43,36 @@ class PanoBase(WandbLightningModule):
             return ' '.join([self.hparams.pers_prompt_prefix, pers_prompt])
         return [self.add_pers_prompt_prefix(p) for p in pers_prompt]
 
-    def get_pano_prompt(self, batch):
-        if self.hparams.mv_pano_prompt:
-            prompts = list(map(list, zip(*batch['prompt'])))
-            pano_prompt = ['. '.join(p1) if p2 else '' for p1, p2 in zip(prompts, batch['pano_prompt'])]
-        else:
-            pano_prompt = batch['pano_prompt']
-        return self.add_pano_prompt_prefix(pano_prompt)
-
     def get_pers_prompt(self, batch):
-        if self.hparams.copy_pano_prompt:
-            prompts = sum([[p] * batch['cameras']['height'].shape[-1] for p in batch['pano_prompt']], [])
-        else:
-            prompts = sum(map(list, zip(*batch['prompt'])), [])
-        return self.add_pers_prompt_prefix(prompts)
+        # Construct a single prompt string for each perspective
+        base_prompt = batch.get('prompt', [''])[0]  # since prompt might be a list
+        mood = batch.get('mood', [''])[0]
+        tags = ', '.join(batch.get('tags', [[]])[0])
+        negative_tags = ', '.join(batch.get('negative_tags', [[]])[0])
+        lighting = batch.get('lighting', [''])[0]
+
+        full_prompt = (f"{base_prompt}, mood: {mood}, tags: {tags}, "
+                    f"lighting: {lighting}, negative tags: {negative_tags}")
+        
+        # If you have multiple cameras, replicate the prompt for each camera
+        num_cameras = batch['images'].shape[1]
+        pers_prompts = [full_prompt for _ in range(num_cameras)]
+        return pers_prompts
+
+    def get_pano_prompt(self, batch):
+        # Pano prompt typically is just one per batch entry
+        base_prompt = batch.get('prompt', [''])[0]
+        mood = batch.get('mood', [''])[0]
+        tags = ', '.join(batch.get('tags', [[]])[0])
+        negative_tags = ', '.join(batch.get('negative_tags', [[]])[0])
+        lighting = batch.get('lighting', [''])[0]
+
+        full_prompt = (f"{base_prompt}, mood: {mood}, tags: {tags}, "
+                    f"lighting: {lighting}, negative tags: {negative_tags}")
+        
+        # One pano prompt per batch item
+        pano_prompts = [full_prompt for _ in range(batch['images'].shape[0])]
+        return pano_prompts
 
 
 class PanoGenerator(PanoBase):
