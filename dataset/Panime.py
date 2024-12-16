@@ -7,7 +7,7 @@ import lightning as L
 from torch.utils.data import DataLoader
 
 class PanimeDataModule(L.LightningDataModule):
-    def __init__(self, data_dir: str, batch_size: int = 4, num_workers: int = 4, pano_height: int = 1024):
+    def __init__(self, data_dir: str, batch_size: int = 1, num_workers: int = 4, pano_height: int = 1024):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
