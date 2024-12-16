@@ -56,6 +56,10 @@ class PanimeDataset(PanoDataset):
 
         # Use the 'prompt' field as pano_prompt
         item['pano_prompt'] = item.get('prompt', '')  # Default to an empty string if 'prompt' is missing
+        item['mood'] = item.get('mood', '')  # Load mood, default to empty string
+        item['tags'] = item.get('tags', [])  # Load tags, default to an empty list
+        item['negative_tags'] = item.get('negative_tags', [])  # Load negative tags, default to empty list
+        item['lighting'] = item.get('lighting', '') 
 
         return item
 
