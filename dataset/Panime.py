@@ -1,6 +1,7 @@
 import os
 from .PanoDataset import PanoDataset, PanoDataModule
 from PIL import Image
+import numpy as np
 
 class PanimeDataset(PanoDataset):
     def load_split(self, mode):
