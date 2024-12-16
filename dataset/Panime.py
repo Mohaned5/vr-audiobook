@@ -37,24 +37,23 @@ class PanimeDataset(PanoDataset):
         return results
 
     def get_data(self, idx):
-        """
-        Get a single data sample by index.
-        Args:
-            idx (int): The index of the data sample to retrieve.
-        Returns:
-            dict: A dictionary containing the sample's data.
-        """
-        # Retrieve the sample data
+        # Retrieve the data sample
         item = self.data[idx].copy()
+
+        # Construct the pano path
+        item['pano_id'] = f"panime_{idx:06d}"
+        item['pano_path'] = os.path.join(self.config["data_dir"], item["image"])
         
-        # Add pano_id (unique identifier)
-        item["pano_id"] = f"panime_{idx:06d}"
+        # Print the image path for debugging
+        print(f"Loading image from: {item['pano_path']}")
 
-        # Add pano_path (path to the panoramic image)
-        item["pano_path"] = os.path.join(self.config["data_dir"], item["image"])
-
-        # Add pano_prompt (prompt for conditioning)
-        item["pano_prompt"] = item["prompt"]
+        # Load the image as a NumPy array
+        if os.path.exists(item['pano_path']):
+            pano_image = Image.open(item['pano_path']).convert("RGB")  # Convert to RGB
+            item['image'] = np.array(pano_image)  # Convert to NumPy array
+        else:
+            print(f"Image not found: {item['pano_path']}")
+            item['image'] = None  # Handle missing image gracefully
 
         return item
 
