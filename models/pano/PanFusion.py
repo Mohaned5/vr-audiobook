@@ -43,38 +43,21 @@ class PanFusion(PanoGenerator):
         return pano_noise, noise
 
     def embed_prompt(self, batch, num_cameras):
-        # Perspective Prompt Embedding
-        if self.hparams.use_pers_prompt:
-            pers_prompt = self.get_pers_prompt(batch)
-            # Extend perspective prompt with additional metadata
-            extended_pers_prompts = [
-                f"{prompt}. Mood: {batch['mood'][i]}. Tags: {', '.join(batch['tags'][i])}. "
-                f"Lighting: {batch['lighting'][i]}. Avoid: {', '.join(batch['negative_tags'][i])}."
-                for i, prompt in enumerate(pers_prompt)
-            ]
-            pers_prompt_embd = self.encode_text(extended_pers_prompts)
-            pers_prompt_embd = rearrange(pers_prompt_embd, '(b m) l c -> b m l c', m=num_cameras)
-        else:
-            pers_prompt = ''
-            pers_prompt_embd = self.encode_text(pers_prompt)
-            pers_prompt_embd = pers_prompt_embd[:, None].repeat(1, num_cameras, 1, 1)
+        extended_pers_prompts = []
+        for i, prompt in enumerate(batch['prompt']):
+            mood = batch['mood'][i] if i < len(batch['mood']) else "Unknown"
+            tags = ', '.join(batch['tags'][i]) if i < len(batch['tags']) else "None"
+            lighting = batch['lighting'][i] if i < len(batch['lighting']) else "Unknown"
+            extended_pers_prompts.append(f"{prompt}. Mood: {mood}. Tags: {tags}. Lighting: {lighting}")
+        
+        pers_prompt_embd = self.encode_text(extended_pers_prompts)
+        pers_prompt_embd = rearrange(pers_prompt_embd, '(b m) l c -> b m l c', m=num_cameras)
 
-        # Panoramic Prompt Embedding
-        if self.hparams.use_pano_prompt:
-            pano_prompt = self.get_pano_prompt(batch)
-            # Extend panoramic prompt with additional metadata
-            extended_pano_prompts = [
-                f"{prompt}. Mood: {batch['mood'][i]}. Tags: {', '.join(batch['tags'][i])}. "
-                f"Lighting: {batch['lighting'][i]}. Avoid: {', '.join(batch['negative_tags'][i])}."
-                for i, prompt in enumerate(pano_prompt)
-            ]
-            pano_prompt_embd = self.encode_text(extended_pano_prompts)
-        else:
-            pano_prompt = ''
-            pano_prompt_embd = self.encode_text(pano_prompt)
+        pano_prompt_embd = self.encode_text(batch['pano_prompt'])
         pano_prompt_embd = pano_prompt_embd[:, None]
 
         return pers_prompt_embd, pano_prompt_embd
+
 
 
     def training_step(self, batch, batch_idx):
