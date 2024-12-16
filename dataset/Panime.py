@@ -2,6 +2,51 @@ import os
 from .PanoDataset import PanoDataset, PanoDataModule
 from PIL import Image
 import numpy as np
+# File: dataset/Panime.py
+import lightning as L
+from torch.utils.data import DataLoader
+
+class PanimeDataModule(L.LightningDataModule):
+    def __init__(self, data_dir: str, batch_size: int = 4, num_workers: int = 4, pano_height: int = 512):
+        super().__init__()
+        self.data_dir = data_dir
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.pano_height = pano_height
+
+    def setup(self, stage=None):
+        if stage in ("fit", None):
+            self.train_dataset = PanimeDataset(
+                config={"data_dir": self.data_dir, "pano_height": self.pano_height}, mode="train"
+            )
+
+        if stage in ("fit", "validate", None):
+            self.val_dataset = PanimeDataset(
+                config={"data_dir": self.data_dir, "pano_height": self.pano_height}, mode="val"
+            )
+
+        if stage == "test":
+            self.test_dataset = PanimeDataset(
+                config={"data_dir": self.data_dir, "pano_height": self.pano_height}, mode="test"
+            )
+
+        if stage == "predict":
+            self.predict_dataset = PanimeDataset(
+                config={"data_dir": self.data_dir, "pano_height": self.pano_height}, mode="predict"
+            )
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
+
+    def val_dataloader(self):
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+
+    def predict_dataloader(self):
+        return DataLoader(self.predict_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+
 
 class PanimeDataset(PanoDataset):
     def load_split(self, mode):
