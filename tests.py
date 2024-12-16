@@ -1,7 +1,7 @@
 from dataset.Panime import PanimeDataset
 
 # Initialize the dataset for the "train" split
-dataset = PanimeDataset(config={"data_dir": "data/Panime/dataset.json"}, mode="train")
+dataset = PanimeDataset(config={"data_dir": "data/Panime"}, mode="train")
 
 # Check the number of samples
 print(f"Number of samples in train dataset: {len(dataset)}")
