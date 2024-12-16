@@ -10,7 +10,7 @@ class PanimeDataset(PanoDataset):
         import json
 
         # Load dataset JSON
-        dataset_path = os.path.join(self.config['data_dir'], "panime_dataset.json")
+        dataset_path = os.path.join(self.config['data_dir'], "dataset.json")
         with open(dataset_path, "r") as f:
             all_data = json.load(f)
 
@@ -59,7 +59,7 @@ class PanimeDataset(PanoDataset):
         return item
 
 class PanimeDataModule(PanoDataModule):
-    def __init__(self, data_dir="path/to/dataset", *args, **kwargs):
+    def __init__(self, data_dir="data/Panime", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.hparams["data_dir"] = data_dir
         self.dataset_cls = PanimeDataset
