@@ -45,17 +45,17 @@ class PanimeDataset(PanoDataset):
         # Construct the pano path
         item['pano_id'] = f"panime_{idx:06d}"
         item['pano_path'] = os.path.join(self.config["data_dir"], item["image"])
-        
-        # Print the image path for debugging
-        print(f"Loading image from: {item['pano_path']}")
 
-        # Load the image as a NumPy array
+        # Load the image
         if os.path.exists(item['pano_path']):
-            pano_image = Image.open(item['pano_path']).convert("RGB")  # Convert to RGB
-            item['image'] = np.array(pano_image)  # Convert to NumPy array
+            pano_image = Image.open(item['pano_path']).convert("RGB")
+            item['image'] = np.array(pano_image)
         else:
             print(f"Image not found: {item['pano_path']}")
-            item['image'] = None  # Handle missing image gracefully
+            item['image'] = None  # Handle missing images gracefully
+
+        # Use the 'prompt' field as pano_prompt
+        item['pano_prompt'] = item.get('prompt', '')  # Default to an empty string if 'prompt' is missing
 
         return item
 
