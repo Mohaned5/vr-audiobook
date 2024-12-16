@@ -43,20 +43,34 @@ class PanFusion(PanoGenerator):
         return pano_noise, noise
 
     def embed_prompt(self, batch, num_cameras):
-        extended_pers_prompts = []
-        for i, prompt in enumerate(batch['prompt']):
-            mood = batch['mood'][i] if i < len(batch['mood']) else "Unknown"
-            tags = ', '.join(batch['tags'][i]) if i < len(batch['tags']) else "None"
-            lighting = batch['lighting'][i] if i < len(batch['lighting']) else "Unknown"
-            extended_pers_prompts.append(f"{prompt}. Mood: {mood}. Tags: {tags}. Lighting: {lighting}")
+        # Debug shapes
+        print(f"Batch size: {len(batch['prompt'])}, num_cameras: {num_cameras}")
         
+        # Construct extended prompts
+        extended_pers_prompts = [
+            f"{prompt}. Mood: {batch['mood'][i]}. Tags: {', '.join(batch['tags'][i])}. Lighting: {batch['lighting'][i]}"
+            for i, prompt in enumerate(batch['prompt'])
+        ]
         pers_prompt_embd = self.encode_text(extended_pers_prompts)
-        pers_prompt_embd = rearrange(pers_prompt_embd, '(b m) l c -> b m l c', m=num_cameras)
+        
+        # Handle potential shape mismatch
+        if pers_prompt_embd.shape[0] % num_cameras != 0:
+            print("Adjusting num_cameras to match pers_prompt_embd shape.")
+            num_cameras = pers_prompt_embd.shape[0]
+        
+        # Rearrange embedding
+        pers_prompt_embd = rearrange(
+            pers_prompt_embd, 
+            '(b m) l c -> b m l c', 
+            b=pers_prompt_embd.shape[0] // num_cameras, 
+            m=num_cameras
+        )
 
         pano_prompt_embd = self.encode_text(batch['pano_prompt'])
         pano_prompt_embd = pano_prompt_embd[:, None]
 
         return pers_prompt_embd, pano_prompt_embd
+
 
 
 
