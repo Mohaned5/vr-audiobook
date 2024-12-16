@@ -13,40 +13,82 @@ class PanimeDataModule(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.pano_height = pano_height
+
+    @staticmethod
+    def custom_collate_fn(batch):
+        # Ensure all images and pano tensors are stacked
+        images = torch.stack([sample['image'] for sample in batch])
+        pano = torch.stack([sample['pano'] for sample in batch])
         
+        # Collect metadata (variable-length fields)
+        mood = [sample['mood'] for sample in batch]  # List of strings
+        tags = [sample['tags'] for sample in batch]  # List of lists
+        negative_tags = [sample['negative_tags'] for sample in batch]  # List of lists
+        lighting = [sample['lighting'] for sample in batch]  # List of strings
+        
+        # Ensure cameras are properly batched
+        cameras = {key: torch.stack([sample['cameras'][key] for sample in batch]) for key in batch[0]['cameras']}
+        
+        return {
+            'images': images,          # Tensor
+            'pano': pano,              # Tensor
+            'mood': mood,              # List[str]
+            'tags': tags,              # List[List[str]]
+            'negative_tags': negative_tags,  # List[List[str]]
+            'lighting': lighting,      # List[str]
+            'cameras': cameras,        # Dict[str, Tensor]
+        }
 
     def setup(self, stage=None):
+        dataset_config = {"data_dir": self.data_dir, "pano_height": self.pano_height}
+        
         if stage in ("fit", None):
-            self.train_dataset = PanimeDataset(
-                config={"data_dir": self.data_dir, "pano_height": self.pano_height}, mode="train"
-            )
+            self.train_dataset = PanimeDataset(config=dataset_config, mode="train")
 
         if stage in ("fit", "validate", None):
-            self.val_dataset = PanimeDataset(
-                config={"data_dir": self.data_dir, "pano_height": self.pano_height}, mode="val"
-            )
+            self.val_dataset = PanimeDataset(config=dataset_config, mode="val")
 
         if stage == "test":
-            self.test_dataset = PanimeDataset(
-                config={"data_dir": self.data_dir, "pano_height": self.pano_height}, mode="test"
-            )
+            self.test_dataset = PanimeDataset(config=dataset_config, mode="test")
 
         if stage == "predict":
-            self.predict_dataset = PanimeDataset(
-                config={"data_dir": self.data_dir, "pano_height": self.pano_height}, mode="predict"
-            )
+            self.predict_dataset = PanimeDataset(config=dataset_config, mode="predict")
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
+        return torch.utils.data.DataLoader(
+            self.train_dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+            collate_fn=self.custom_collate_fn
+        )
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+        return torch.utils.data.DataLoader(
+            self.val_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+            collate_fn=self.custom_collate_fn
+        )
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+        return torch.utils.data.DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+            collate_fn=self.custom_collate_fn
+        )
 
     def predict_dataloader(self):
-        return DataLoader(self.predict_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+        return torch.utils.data.DataLoader(
+            self.predict_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+            collate_fn=self.custom_collate_fn
+        )
 
 
 class PanimeDataset(PanoDataset):
