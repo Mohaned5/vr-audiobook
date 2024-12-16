@@ -47,7 +47,11 @@ def cli_main():
                 if self.config.test.data.init_args.result_dir is None:
                     result_dir = os.path.join(exp_dir, 'test')
                     self.config.test.data.init_args.result_dir = result_dir
-                self.config.test.model.init_args.data = self.config.test.data.class_path.split('.')[-1]
+
+                self.config.test.model.init_args.data = "PanimeDataModule"
+                self.config.test.data.init_args.data_dir = "data/Panime/dataset.json"
+                self.config.test.data.init_args.pano_height = 2048 
+                self.config.test.data.init_args.batch_size = 1
                 self.config.test.model.init_args.pano_height = self.config.test.data.init_args.pano_height
                 self.config.test.data.init_args.batch_size = 1
 
@@ -66,10 +70,19 @@ def cli_main():
             'limit_val_batches': 4,
             'benchmark': True,
             'max_epochs': 10,
-            'precision': 32,
+            'precision': 16,
             'callbacks': [checkpoint_callback, lr_monitor],
             'logger': wandb_logger
-        })
+        },
+        data_defaults={
+        "class_path": "datasets.Panime.PanimeDataModule",
+        "init_args": {
+            "data_dir": "data/Panime/dataset.json",
+            "batch_size": 1,
+            "num_workers": 4,
+            "pano_height": 512,
+        }
+    })
 
 
 if __name__ == '__main__':
