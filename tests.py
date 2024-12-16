@@ -27,4 +27,6 @@ sample = dataset[0]
 print("Sample data:")
 print(f"Pano ID: {sample['pano_id']}")
 print(f"Prompt: {sample['pano_prompt']}")
+print (f"Image path: {sample['pano_path']}")
+print(f"Image: {sample['image']}")
 print(f"Image shape: {sample['image'].shape}")
