@@ -49,7 +49,7 @@ def cli_main():
                     self.config.test.data.init_args.result_dir = result_dir
 
                 self.config.test.model.init_args.data = "PanimeDataModule"
-                self.config.test.data.init_args.data_dir = "data/Panime/dataset.json"
+                self.config.test.data.init_args.data_dir = "data/Panime"
                 self.config.test.data.init_args.pano_height = 2048 
                 self.config.test.data.init_args.batch_size = 1
                 self.config.test.model.init_args.pano_height = self.config.test.data.init_args.pano_height
@@ -73,16 +73,7 @@ def cli_main():
             'precision': 16,
             'callbacks': [checkpoint_callback, lr_monitor],
             'logger': wandb_logger
-        },
-        data_defaults={
-        "class_path": "datasets.Panime.PanimeDataModule",
-        "init_args": {
-            "data_dir": "data/Panime/dataset.json",
-            "batch_size": 1,
-            "num_workers": 4,
-            "pano_height": 512,
-        }
-    })
+        })
 
 
 if __name__ == '__main__':
