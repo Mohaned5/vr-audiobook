@@ -30,3 +30,8 @@ print(f"Prompt: {sample['pano_prompt']}")
 print (f"Image path: {sample['pano_path']}")
 print(f"Image: {sample['image']}")
 print(f"Image shape: {sample['image'].shape}")
+print(f"Mood: {sample['mood']}")
+print(f"Tags: {sample['tags']}")    
+print(f"Negative tags: {sample['negative_tags']}")
+print(f"Lighting: {sample['lighting']}")
+
