@@ -5,6 +5,7 @@ from .PanoDataset import PanoDataset, PanoDataModule
 from PIL import Image
 import numpy as np
 from torch.utils.data import DataLoader
+from utils.pano_collate import pano_collate_fn
 
 class PanimeDataset(PanoDataset):
     """
@@ -96,3 +97,43 @@ class PanimeDataModule(PanoDataModule):
         super().__init__(*args, **kwargs)
         self.save_hyperparameters()
         self.dataset_cls = PanimeDataset  
+
+    def train_dataloader(self):
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=True,
+            num_workers=self.hparams.num_workers,
+            drop_last=True,
+            collate_fn=pano_collate_fn  
+        )
+    
+    def val_dataloader(self):
+        return DataLoader(
+            self.val_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            collate_fn=pano_collate_fn
+        )
+
+    def test_dataloader(self):
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            collate_fn=pano_collate_fn
+        )
+
+    def predict_dataloader(self):
+        return DataLoader(
+            self.predict_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            collate_fn=pano_collate_fn
+        )
