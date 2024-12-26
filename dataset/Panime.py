@@ -70,7 +70,7 @@ class PanimeDataset(PanoDataset):
         image = np.array(image).astype('float32') / 127.5 - 1.0
         image = np.transpose(image, (2, 0, 1))
         data['image'] = image
-        data['pano'] = image
+        data['pano'] = np.expand_dims(image, axis=0)
 
         data['pano_prompt'] = self.unify_text_fields(data)
 
@@ -91,9 +91,6 @@ class PanimeDataModule(PanoDataModule):
 
     def train_dataloader(self):
         print(f"[DEBUG] Num workers being used: {self.hparams.num_workers}")
-        for batch in loader:
-            print(f"[DEBUG] Batch keys: {batch.keys()}")
-            break  # Only print for the first batch
         return DataLoader(
             self.train_dataset,
             batch_size=self.hparams.batch_size,

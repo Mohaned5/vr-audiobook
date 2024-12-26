@@ -7,18 +7,22 @@ def pano_collate_fn(batch):
     """
     images = []
     pano_prompts = []
+    panos = [] 
 
     for item in batch:
         # Convert 'image' from NumPy to a torch.Tensor
         images.append(torch.from_numpy(item['image']))
+        panos.append(torch.from_numpy(item['pano']))
         
         # The single merged textual prompt for this sample
         pano_prompts.append(item['pano_prompt'])
 
     # Stack only images (which share the same shape) into [B, C, H, W]
     images = torch.stack(images, dim=0)
+    panos = torch.stack(panos, dim=0)
 
     return {
         'image': images,
+        'pano': panos,
         'pano_prompt': pano_prompts
     }
