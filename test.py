@@ -8,7 +8,7 @@ def test_loader():
         'cam_sampler': 'icosahedron',  # Options: 'icosahedron', 'horizon'
         'pers_resolution': 256,
         'pano_height': 512,
-        'uncond_ratio': 0.2,
+        'uncond_ratio': 0,
         'batch_size': 2,
         'num_workers': 0,  # Set to 0 for testing to avoid parallelism issues
         'result_dir': None,  # Set if you have result predictions
