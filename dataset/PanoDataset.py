@@ -76,7 +76,8 @@ class PanoDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         data = self.get_data(idx)
-
+        if data is None:
+            raise IndexError(f"Invalid data at index {idx}")
         # load layout
         if 'layout' in data:
             layout = data['layout']
