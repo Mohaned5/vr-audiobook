@@ -28,18 +28,17 @@ class PanimeDataset(PanoDataset):
         data['pano_id'] = os.path.splitext(os.path.basename(data['image']))[0]
         data['pano_path'] = os.path.join(self.data_dir, data['image'])
 
-        # Add prompt and additional metadata
-        data['prompt'] = data['prompt']
+        # Directly use the prompt from the dataset JSON
+        data['pano_prompt'] = data['prompt']
+
+        # Additional metadata
         data['mood'] = data.get('mood', '')
         data['tags'] = data.get('tags', [])
         data['negative_tags'] = data.get('negative_tags', [])
         data['lighting'] = data.get('lighting', '')
 
-        # If results are present, add prediction paths
-        if self.result_dir is not None:
-            data['pano_pred_path'] = os.path.join(self.result_dir, f"{data['pano_id']}.png")
-        
         return data
+
 
 class PanimeDataModule(PanoDataModule):
     def __init__(
