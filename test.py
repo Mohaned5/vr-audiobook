@@ -51,7 +51,7 @@ def test_loader():
     for batch in train_loader:
         print("Batch example:")
         print(f"  Image batch shape: {batch['image'].shape}")
-        print(f"  Prompts: {batch['pano_prompt']}")
+        print(f"  Prompts: {batch['prompt']}")
         print(f"  Moods: {batch['mood']}")
         print(f"  Tags batch: {batch['tags']}")
         print(f"  Negative Tags batch: {batch['negative_tags']}")
