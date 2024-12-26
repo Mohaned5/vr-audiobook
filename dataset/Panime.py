@@ -1,7 +1,7 @@
 import os
 import json
 from glob import glob
-from PanoDataset import PanoDataset, PanoDataModule
+from .PanoDataset import PanoDataset, PanoDataModule
 
 
 class PanimeDataset(PanoDataset):
@@ -50,4 +50,4 @@ class PanimeDataModule(PanoDataModule):
             ):
         super().__init__(*args, **kwargs)
         self.save_hyperparameters()
-        self.dataset_cls = PanimeDataset  # Use the tailored dataset class
+        self.dataset_cls = PanimeDataset  

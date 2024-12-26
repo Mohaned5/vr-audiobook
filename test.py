@@ -1,4 +1,4 @@
-from Panime import PanimeDataset, PanimeDataModule
+from dataset.Panime import PanimeDataset, PanimeDataModule
 
 def test_loader():
     # Mock configuration
