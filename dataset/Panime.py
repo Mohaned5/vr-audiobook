@@ -2,6 +2,8 @@ import os
 import json
 from glob import glob
 from .PanoDataset import PanoDataset, PanoDataModule
+from PIL import Image
+import numpy as np
 
 
 class PanimeDataset(PanoDataset):
@@ -28,6 +30,13 @@ class PanimeDataset(PanoDataset):
         data['pano_id'] = os.path.splitext(os.path.basename(data['image']))[0]
         data['pano_path'] = os.path.join(self.data_dir, data['image'])
 
+        # Load and preprocess the image
+        image = Image.open(data['pano_path']).convert('RGB')  # Convert to RGB
+        image = image.resize((self.config['pano_height'] * 2, self.config['pano_height']))  # Resize to desired dimensions
+        image = np.array(image).astype('float32') / 127.5 - 1.0  # Normalize to [-1, 1]
+        image = np.transpose(image, (2, 0, 1))  # Convert to channels-first format for PyTorch
+        data['image'] = image
+
         # Directly use the prompt from the dataset JSON
         data['pano_prompt'] = data['prompt']
 
@@ -38,6 +47,7 @@ class PanimeDataset(PanoDataset):
         data['lighting'] = data.get('lighting', '')
 
         return data
+
 
 
 class PanimeDataModule(PanoDataModule):
