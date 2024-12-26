@@ -1,30 +1,35 @@
+"""
+test.py
+Example test script for the updated PanimeDataset and PanimeDataModule.
+"""
+
+import os
 from dataset.Panime import PanimeDataset, PanimeDataModule
 
 def test_loader():
     # Mock configuration
     config = {
-        'data_dir': 'data/Panime',  # Path to your dataset
+        'data_dir': 'data/Panime',     # Path to your dataset
         'fov': 90,
-        'cam_sampler': 'icosahedron',  # Options: 'icosahedron', 'horizon'
+        'cam_sampler': 'icosahedron',
         'pers_resolution': 256,
         'pano_height': 512,
-        'uncond_ratio': 0,
+        'uncond_ratio': 0.2,
         'batch_size': 2,
-        'num_workers': 0,  # Set to 0 for testing to avoid parallelism issues
-        'result_dir': None,  # Set if you have result predictions
+        'num_workers': 0,  # For testing, often safer to keep this 0
+        'result_dir': None,
         'rand_rot_img': False,
         'rand_flip': True,
         'gt_as_result': False,
         'horizon_layout': False,
         'manhattan_layout': False,
-        'layout_cond_type': None,  # Set to a specific type if needed
-        'repeat_predict': 10,  # For prediction mode
+        'layout_cond_type': None,
+        'repeat_predict': 10
     }
 
-    # Instantiate and test the dataset
+    # Instantiate and test the dataset directly
     print("Testing PanimeDataset...")
     dataset = PanimeDataset(config, mode='train')
-
     print(f"Total samples in train dataset: {len(dataset)}")
 
     # Print a few samples from the dataset
@@ -32,17 +37,18 @@ def test_loader():
         sample = dataset[i]
         print(f"Sample {i}:")
         print(f"  Image Shape: {sample['image'].shape}")
-        print(f"  Prompt: {sample['prompt']}")
-        print(f"  Mood: {sample['mood']}")
-        print(f"  Tags: {sample['tags']}")
-        print(f"  Negative Tags: {sample['negative_tags']}")
-        print(f"  Lighting: {sample['lighting']}")
+        print(f"  Pano Prompt: {sample['pano_prompt']}")
+        # If you kept separate fields, you could print them too:
+        # print(f"  Mood: {sample.get('mood')}")
+        # print(f"  Tags: {sample.get('tags')}")
+        # print(f"  Negative Tags: {sample.get('negative_tags')}")
+        # print(f"  Lighting: {sample.get('lighting')}")
         print("-" * 30)
 
     # Instantiate and test the data module
     print("\nTesting PanimeDataModule...")
     data_module = PanimeDataModule(**config)
-    data_module.setup(stage='fit')
+    data_module.setup(stage='fit')  # Prepares train_dataset, val_dataset, etc.
 
     train_loader = data_module.train_dataloader()
     print(f"Number of batches in train loader: {len(train_loader)}")
@@ -51,13 +57,10 @@ def test_loader():
     for batch in train_loader:
         print("Batch example:")
         print(f"  Image batch shape: {batch['image'].shape}")
-        print(f"  Prompts: {batch['prompt']}")
-        print(f"  Moods: {batch['mood']}")
-        print(f"  Tags batch: {batch['tags']}")
-        print(f"  Negative Tags batch: {batch['negative_tags']}")
-        print(f"  Lighting batch: {batch['lighting']}")
+        # 'pano_prompt' is the single merged string for each sample
+        print(f"  Pano prompts in batch: {batch['pano_prompt']}")
         print("-" * 30)
-        break  # Print only one batch for simplic
+        break  # Print only one batch for simplicity
 
 if __name__ == "__main__":
     test_loader()
