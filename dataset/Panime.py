@@ -52,28 +52,32 @@ class PanimeDataset(PanoDataset):
 
     def get_data(self, idx):
         """Load and return a single dataset entry with unified text fields."""
-        data = self.data[idx].copy()
+        try:
+            data = self.data[idx].copy()
 
-        # Basic data fields
-        data['pano_id'] = os.path.splitext(os.path.basename(data['image']))[0]
-        data['pano_path'] = os.path.join(self.data_dir, data['image'])
+            # Basic data fields
+            data['pano_id'] = os.path.splitext(os.path.basename(data['image']))[0]
+            data['pano_path'] = os.path.join(self.data_dir, data['image'])
 
-        # Load the image
-        image = Image.open(data['pano_path']).convert('RGB')  # Convert to RGB
-        width, height = image.size
+            # Load the image
+            image = Image.open(data['pano_path']).convert('RGB')  # Convert to RGB
+            width, height = image.size
 
-        # Check if the image size matches the expected dimensions (2048x1024)
-        if (width, height) != (2048, 1024):
-            print(f"WARNING: Image {data['pano_path']} has size {width}x{height}, expected 2048x1024")
+            # Check if the image size matches the expected dimensions (2048x1024)
+            if (width, height) != (2048, 1024):
+                print(f"WARNING: Image {data['pano_path']} has size {width}x{height}, expected 2048x1024")
 
-        # Convert image to NumPy array, normalize to [-1, 1], channels-first
-        image = np.array(image).astype('float32') / 127.5 - 1.0
-        image = np.transpose(image, (2, 0, 1))
-        data['image'] = image
-        data['pano'] = np.expand_dims(image, axis=0)
+            # Convert image to NumPy array, normalize to [-1, 1], channels-first
+            image = np.array(image).astype('float32') / 127.5 - 1.0
+            image = np.transpose(image, (2, 0, 1))
+            data['image'] = image
+            data['pano'] = np.expand_dims(image, axis=0)
 
-        data['pano_prompt'] = self.unify_text_fields(data)
+            data['pano_prompt'] = self.unify_text_fields(data)
 
+        except (OSError, UnidentifiedImageError) as e:
+            print(f"Corrupted file: {data['pano_path']}, error: {e}")
+            return None 
         return data
 
 
