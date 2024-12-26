@@ -89,6 +89,8 @@ class PanimeDataModule(PanoDataModule):
         self.dataset_cls = PanimeDataset  
 
     def train_dataloader(self):
+        print(f"[DEBUG] Num workers being used: {self.hparams.num_workers}")
+
         return DataLoader(
             self.train_dataset,
             batch_size=self.hparams.batch_size,
