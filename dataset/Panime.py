@@ -75,7 +75,7 @@ class PanimeDataset(PanoDataset):
 
             data['pano_prompt'] = self.unify_text_fields(data)
 
-        except (OSError, UnidentifiedImageError) as e:
+        except Exception as e:
             print(f"Corrupted file: {data['pano_path']}, error: {e}")
             return None 
         return data
