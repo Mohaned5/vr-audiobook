@@ -91,7 +91,9 @@ class PanimeDataModule(PanoDataModule):
 
     def train_dataloader(self):
         print(f"[DEBUG] Num workers being used: {self.hparams.num_workers}")
-
+        for batch in loader:
+            print(f"[DEBUG] Batch keys: {batch.keys()}")
+            break  # Only print for the first batch
         return DataLoader(
             self.train_dataset,
             batch_size=self.hparams.batch_size,
