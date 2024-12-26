@@ -33,7 +33,7 @@ def test_loader():
     print(f"Total samples in train dataset: {len(dataset)}")
 
     # Print a few samples from the dataset
-    for i in range(3):
+    for i in range(10):
         sample = dataset[i]
         print(f"Sample {i}:")
         print(f"  Image Shape: {sample['image'].shape}")
@@ -54,13 +54,16 @@ def test_loader():
     print(f"Number of batches in train loader: {len(train_loader)}")
 
     # Fetch and print a batch
+    i = 0
     for batch in train_loader:
         print("Batch example:")
         print(f"  Image batch shape: {batch['image'].shape}")
         # 'pano_prompt' is the single merged string for each sample
         print(f"  Pano prompts in batch: {batch['pano_prompt']}")
         print("-" * 30)
-        break  # Print only one batch for simplicity
+        if i == 5:
+            break  # Print only one batch for simplicity
+        i += 1
 
 if __name__ == "__main__":
     test_loader()
