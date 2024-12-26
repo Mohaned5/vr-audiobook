@@ -3,16 +3,22 @@ from dataset.Panime import PanimeDataset, PanimeDataModule
 def test_loader():
     # Mock configuration
     config = {
-        'data_dir': 'data/Panime',
-        'result_dir': None,  # Path to results directory if applicable
+        'data_dir': 'data/Panime',  # Path to your dataset
         'fov': 90,
+        'cam_sampler': 'icosahedron',  # Options: 'icosahedron', 'horizon'
         'pers_resolution': 256,
         'pano_height': 512,
+        'uncond_ratio': 0.2,
         'batch_size': 2,
-        'num_workers': 0,
-        'gt_as_result': False,  # Add this key
-        'rand_rot_img': False,  # Optional: Add other keys expected by PanimeDataset
+        'num_workers': 0,  # Set to 0 for testing to avoid parallelism issues
+        'result_dir': None,  # Set if you have result predictions
+        'rand_rot_img': False,
         'rand_flip': True,
+        'gt_as_result': False,
+        'horizon_layout': False,
+        'manhattan_layout': False,
+        'layout_cond_type': None,  # Set to a specific type if needed
+        'repeat_predict': 10,  # For prediction mode
     }
 
     # Instantiate and test the dataset
