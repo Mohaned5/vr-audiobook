@@ -46,7 +46,8 @@ class PanimeDataset(PanoDataset):
         # neg_tags_str = f"Negative tags: {', '.join(negative_tags)}. " if negative_tags else ""
 
         # Combine them into a single string
-        combined_prompt = f"{mood_str}{lighting_str}{tags_str}{prompt}"
+        # combined_prompt = f"{mood_str}{lighting_str}{tags_str}{neg_tags_str}{prompt}"
+        combined_prompt = f"{prompt}. {mood_str}{lighting_str}{tags_str}"
         return combined_prompt
 
     def get_data(self, idx):
