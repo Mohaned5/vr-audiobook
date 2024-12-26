@@ -1,54 +1,35 @@
-import os
-from PIL import Image
+import torch
+from dataset import PanimeDataModule  # Adjust this import as per your actual file structure
 
-def check_images(dataset_dir):
-    # Path to your dataset directory
-    data_dir = os.path.join(dataset_dir, 'train')  # Change to your train directory
+def test_last_batch():
+    # Set up your configuration (replace with actual config or hardcode as needed)
+    config = {
+        'data_dir': 'data/Panime',  # Replace with your actual dataset directory
+        'batch_size': 4,
+        'num_workers': 1,  # Adjust as per your system setup
+    }
 
-    # Check if the directory exists
-    if not os.path.exists(data_dir):
-        print(f"Error: {data_dir} does not exist.")
-        return
+    # Initialize the data module and dataloaders
+    data_module = PanimeDataModule(**config)
+    data_module.setup(stage='fit')  # Initializes the train dataset, etc.
     
-    # List all images in the train directory
-    all_files = os.listdir(data_dir)
-    image_files = [f for f in all_files if f.endswith('.png') or f.endswith('.jpg')]  # Add other formats if necessary
+    # Get the train dataloader
+    train_loader = data_module.train_dataloader()
 
-    corrupted_files = []
-    missing_files = []
-
-    # Loop over all image files
-    for image_file in image_files:
-        file_path = os.path.join(data_dir, image_file)
-
-        try:
-            # Try to open the image
-            with Image.open(file_path) as img:
-                img.verify()  # Verify the image
-            print(f"File {image_file} is valid.")
+    # Iterate through the dataloader to fetch the last batch
+    last_batch = None
+    for batch_idx, batch in enumerate(train_loader):
+        last_batch = batch
+        print(f"Batch {batch_idx + 1}:")
+        print(f"  Image batch shape: {batch['image'].shape}")
+        print(f"  Pano prompt: {batch['pano_prompt']}")
         
-        except (OSError, IOError):
-            print(f"Corrupted file: {file_path}")
-            corrupted_files.append(file_path)
-        
-        # Check if file is missing or empty
-        if os.stat(file_path).st_size == 0:
-            print(f"Empty file found: {file_path}")
-            missing_files.append(file_path)
-
-    # Report
-    if corrupted_files:
-        print(f"\nTotal corrupted files: {len(corrupted_files)}")
-        print("Corrupted files:", corrupted_files)
+    if last_batch:
+        print("\nLast batch fetched:")
+        print(f"  Image batch shape: {last_batch['image'].shape}")
+        print(f"  Pano prompt: {last_batch['pano_prompt']}")
     else:
-        print("\nNo corrupted files found.")
-    
-    if missing_files:
-        print(f"\nTotal missing/empty files: {len(missing_files)}")
-        print("Missing files:", missing_files)
-    else:
-        print("\nNo missing files found.")
+        print("No batches were fetched.")
 
-if __name__ == "__main__":
-    dataset_directory = 'data/Panime'  # Set this to your dataset path
-    check_images(dataset_directory)
+if __name__ == '__main__':
+    test_last_batch()
