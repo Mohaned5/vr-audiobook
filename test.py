@@ -1,69 +1,54 @@
-"""
-test.py
-Example test script for the updated PanimeDataset and PanimeDataModule.
-"""
-
 import os
-from dataset.Panime import PanimeDataset, PanimeDataModule
+from PIL import Image
 
-def test_loader():
-    # Mock configuration
-    config = {
-        'data_dir': 'data/Panime',     # Path to your dataset
-        'fov': 90,
-        'cam_sampler': 'icosahedron',
-        'pers_resolution': 256,
-        'pano_height': 512,
-        'uncond_ratio': 0.2,
-        'batch_size': 2,
-        'num_workers': 0,  # For testing, often safer to keep this 0
-        'result_dir': None,
-        'rand_rot_img': False,
-        'rand_flip': True,
-        'gt_as_result': False,
-        'horizon_layout': False,
-        'manhattan_layout': False,
-        'layout_cond_type': None,
-        'repeat_predict': 10
-    }
+def check_images(dataset_dir):
+    # Path to your dataset directory
+    data_dir = os.path.join(dataset_dir, 'train')  # Change to your train directory
 
-    # Instantiate and test the dataset directly
-    print("Testing PanimeDataset...")
-    dataset = PanimeDataset(config, mode='train')
-    print(f"Total samples in train dataset: {len(dataset)}")
+    # Check if the directory exists
+    if not os.path.exists(data_dir):
+        print(f"Error: {data_dir} does not exist.")
+        return
+    
+    # List all images in the train directory
+    all_files = os.listdir(data_dir)
+    image_files = [f for f in all_files if f.endswith('.png') or f.endswith('.jpg')]  # Add other formats if necessary
 
-    # Print a few samples from the dataset
-    for i in range(10):
-        sample = dataset[i]
-        print(f"Sample {i}:")
-        print(f"  Image Shape: {sample['image'].shape}")
-        print(f"  Pano Prompt: {sample['pano_prompt']}")
-        # If you kept separate fields, you could print them too:
-        # print(f"  Mood: {sample.get('mood')}")
-        # print(f"  Tags: {sample.get('tags')}")
-        # print(f"  Negative Tags: {sample.get('negative_tags')}")
-        # print(f"  Lighting: {sample.get('lighting')}")
-        print("-" * 30)
+    corrupted_files = []
+    missing_files = []
 
-    # Instantiate and test the data module
-    print("\nTesting PanimeDataModule...")
-    data_module = PanimeDataModule(**config)
-    data_module.setup(stage='fit')  # Prepares train_dataset, val_dataset, etc.
+    # Loop over all image files
+    for image_file in image_files:
+        file_path = os.path.join(data_dir, image_file)
 
-    train_loader = data_module.train_dataloader()
-    print(f"Number of batches in train loader: {len(train_loader)}")
+        try:
+            # Try to open the image
+            with Image.open(file_path) as img:
+                img.verify()  # Verify the image
+            print(f"File {image_file} is valid.")
+        
+        except (OSError, IOError):
+            print(f"Corrupted file: {file_path}")
+            corrupted_files.append(file_path)
+        
+        # Check if file is missing or empty
+        if os.stat(file_path).st_size == 0:
+            print(f"Empty file found: {file_path}")
+            missing_files.append(file_path)
 
-    # Fetch and print a batch
-    i = 0
-    for batch in train_loader:
-        print("Batch example:")
-        print(f"  Image batch shape: {batch['image'].shape}")
-        # 'pano_prompt' is the single merged string for each sample
-        print(f"  Pano prompts in batch: {batch['pano_prompt']}")
-        print("-" * 30)
-        if i == 5:
-            break  # Print only one batch for simplicity
-        i += 1
+    # Report
+    if corrupted_files:
+        print(f"\nTotal corrupted files: {len(corrupted_files)}")
+        print("Corrupted files:", corrupted_files)
+    else:
+        print("\nNo corrupted files found.")
+    
+    if missing_files:
+        print(f"\nTotal missing/empty files: {len(missing_files)}")
+        print("Missing files:", missing_files)
+    else:
+        print("\nNo missing files found.")
 
 if __name__ == "__main__":
-    test_loader()
+    dataset_directory = 'data/Panime'  # Set this to your dataset path
+    check_images(dataset_directory)
