@@ -70,6 +70,7 @@ class PanimeDataset(PanoDataset):
         image = np.array(image).astype('float32') / 127.5 - 1.0
         image = np.transpose(image, (2, 0, 1))
         data['image'] = image
+        data['pano'] = image
 
         data['pano_prompt'] = self.unify_text_fields(data)
 
