@@ -32,27 +32,33 @@ class PanimeDataset(PanoDataset):
 
         # Load the image
         image = Image.open(data['pano_path']).convert('RGB')  # Convert to RGB
-        width, height = image.size
-
-        # Check if the image size matches the expected dimensions
-        if (width, height) != (2048, 1024):
-            print(f"WARNING: Image {data['pano_path']} has size {width}x{height}, expected 2048x1024")
-
-        # Convert image to NumPy array
         image = np.array(image).astype('float32') / 127.5 - 1.0  # Normalize to [-1, 1]
         image = np.transpose(image, (2, 0, 1))  # Convert to channels-first format for PyTorch
         data['image'] = image
 
-        # Directly use the prompt from the dataset JSON
-        data['pano_prompt'] = data['prompt']
+        # Pad or truncate the prompt
+        max_prompt_length = 200  # Maximum string length
+        prompt = data['prompt'][:max_prompt_length]  # Truncate
+        prompt += ' ' * (max_prompt_length - len(prompt))  # Pad with spaces
+        data['pano_prompt'] = prompt
+
+        # Pad or truncate the tags
+        max_tags_length = 15  # Maximum list length
+        tags = data.get('tags', [])
+        tags = tags[:max_tags_length] + [''] * (max_tags_length - len(tags))  # Pad with empty strings
+        data['tags'] = tags
+
+        # Pad or truncate the negative tags
+        negative_tags = data.get('negative_tags', [])
+        negative_tags = negative_tags[:max_tags_length] + [''] * (max_tags_length - len(negative_tags))
+        data['negative_tags'] = negative_tags
 
         # Additional metadata
         data['mood'] = data.get('mood', '')
-        data['tags'] = data.get('tags', [])
-        data['negative_tags'] = data.get('negative_tags', [])
         data['lighting'] = data.get('lighting', '')
 
         return data
+
 
 
 
