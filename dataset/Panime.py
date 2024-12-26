@@ -70,24 +70,13 @@ class PanimeDataset(PanoDataset):
         image = np.transpose(image, (2, 0, 1))
         data['image'] = image
 
-        # Merge all text fields into a single "pano_prompt"
         data['pano_prompt'] = self.unify_text_fields(data)
-
-        # Optionally keep the original text fields if you need them
-        # data['prompt'] = data.get('prompt', "")
-        # data['mood'] = data.get('mood', "")
-        # data['tags'] = data.get('tags', [])
-        # data['negative_tags'] = data.get('negative_tags', [])
-        # data['lighting'] = data.get('lighting', "")
 
         return data
 
 
 class PanimeDataModule(PanoDataModule):
-    """
-    Same as your original PanimeDataModule, but ensure we use PanimeDataset
-    and the custom collate function for variable-length text fields.
-    """
+
     def __init__(
             self,
             data_dir: str = 'data/Panime',
