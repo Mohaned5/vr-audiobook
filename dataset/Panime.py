@@ -15,7 +15,7 @@ class PanimeDataset(PanoDataset):
 
     def load_split(self, mode):
         """Load the dataset split based on the mode (train/val/test/predict)."""
-        dataset_path = os.path.join(self.data_dir, 'dataset.json')
+        dataset_path = os.path.join(self.data_dir, 'train.json')
         with open(dataset_path, 'r') as f:
             dataset = json.load(f)
         
@@ -58,6 +58,7 @@ class PanimeDataset(PanoDataset):
             # Basic data fields
             data['pano_id'] = os.path.splitext(os.path.basename(data['image']))[0]
             data['pano_path'] = os.path.join(self.data_dir, data['image'])
+            print(f"[DEBUG] Loading data at index {idx}: {data}")
 
             # Load the image
             image = Image.open(data['pano_path']).convert('RGB')  # Convert to RGB
@@ -75,8 +76,11 @@ class PanimeDataset(PanoDataset):
 
             data['pano_prompt'] = self.unify_text_fields(data)
 
+        except FileNotFoundError:
+            print(f"[ERROR] File not found: {data.get('pano_path', 'Unknown Path')}")
+            return None
         except Exception as e:
-            print(f"Corrupted file: {data['pano_path']}, error: {e}")
+            print(f"[ERROR] Corrupted file or missing data at index {idx}: {data.get('pano_path', 'Unknown Path')}, error: {e}")
             return None 
         return data
 
