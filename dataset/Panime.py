@@ -30,9 +30,15 @@ class PanimeDataset(PanoDataset):
         data['pano_id'] = os.path.splitext(os.path.basename(data['image']))[0]
         data['pano_path'] = os.path.join(self.data_dir, data['image'])
 
-        # Load and preprocess the image
+        # Load the image
         image = Image.open(data['pano_path']).convert('RGB')  # Convert to RGB
-        image = image.resize((self.config['pano_height'] * 2, self.config['pano_height']))  # Resize to desired dimensions
+        width, height = image.size
+
+        # Check if the image size matches the expected dimensions
+        if (width, height) != (2048, 1024):
+            print(f"WARNING: Image {data['pano_path']} has size {width}x{height}, expected 2048x1024")
+
+        # Convert image to NumPy array
         image = np.array(image).astype('float32') / 127.5 - 1.0  # Normalize to [-1, 1]
         image = np.transpose(image, (2, 0, 1))  # Convert to channels-first format for PyTorch
         data['image'] = image
@@ -47,6 +53,7 @@ class PanimeDataset(PanoDataset):
         data['lighting'] = data.get('lighting', '')
 
         return data
+
 
 
 
