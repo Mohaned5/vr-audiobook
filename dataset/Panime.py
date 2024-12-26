@@ -15,11 +15,20 @@ class PanimeDataset(PanoDataset):
 
     def load_split(self, mode):
         """Load the dataset split based on the mode (train/val/test/predict)."""
-        dataset_path = os.path.join(self.data_dir, 'train.json')
+        file_map = {
+            "train": "train.json",
+            "val": "val.json",
+            "test": "test.json"
+        }
+        if mode not in file_map:
+            raise ValueError(f"Invalid mode: {mode}. Expected one of {list(file_map.keys())}.")
+
+        dataset_path = os.path.join(self.data_dir, file_map[mode])
         with open(dataset_path, 'r') as f:
             dataset = json.load(f)
         
         # Filter the dataset by the given split (e.g., "train", "val", "test")
+        print(f"[INFO] Loaded {len(dataset)} samples for mode '{mode}' from {file_map[mode]}")
         return [item for item in dataset if item['split'] == mode]
 
     def scan_results(self, result_dir):
@@ -58,7 +67,6 @@ class PanimeDataset(PanoDataset):
             # Basic data fields
             data['pano_id'] = os.path.splitext(os.path.basename(data['image']))[0]
             data['pano_path'] = os.path.join(self.data_dir, data['image'])
-            print(f"[DEBUG] Loading data at index {idx}: {data}")
 
             # Load the image
             image = Image.open(data['pano_path']).convert('RGB')  # Convert to RGB
