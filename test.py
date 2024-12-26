@@ -4,12 +4,15 @@ def test_loader():
     # Mock configuration
     config = {
         'data_dir': 'data/Panime',
-        'result_dir': None,  # Set this if you have a result directory
+        'result_dir': None,  # Path to results directory if applicable
         'fov': 90,
         'pers_resolution': 256,
         'pano_height': 512,
         'batch_size': 2,
         'num_workers': 0,
+        'gt_as_result': False,  # Add this key
+        'rand_rot_img': False,  # Optional: Add other keys expected by PanimeDataset
+        'rand_flip': True,
     }
 
     # Instantiate and test the dataset
