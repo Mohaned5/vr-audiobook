@@ -10,6 +10,14 @@ from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
 
+def sanity_check_data(data_module):
+    train_loader = data_module.train_dataloader()
+    for batch in data_module.train_dataloader():
+        print(f"Batch keys: {batch.keys()}")  # Should include 'pano', 'image', and 'pano_prompt'
+        print(f"Pano shape: {batch['pano'].shape}")  # Should match [B, 1, H, W]
+        break
+
+
 def cli_main():
     # remove slurm env vars due to this issue:
     # https://github.com/Lightning-AI/lightning/issues/5225
@@ -53,6 +61,10 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
+    data_module = PanimeDataModule()  # Add necessary arguments if required
+    data_module.setup(stage='fit')
+    sanity_check_data(data_module)
+    
     cli = MyLightningCLI(
         trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
