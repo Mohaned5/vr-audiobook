@@ -79,3 +79,33 @@ class PanimeDataModule(PanoDataModule):
             drop_last=True,
             collate_fn=pano_collate_fn  
         )
+    
+    def val_dataloader(self):
+        return DataLoader(
+            self.val_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            collate_fn=pano_collate_fn
+        )
+
+    def test_dataloader(self):
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            collate_fn=pano_collate_fn
+        )
+
+    def predict_dataloader(self):
+        return DataLoader(
+            self.predict_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            collate_fn=pano_collate_fn
+        )
