@@ -22,7 +22,7 @@ def pano_collate_fn(batch):
     panos = torch.stack(panos, dim=0)
 
     return {
-        'image': images,
+        'images': images,
         'pano': panos,
         'pano_prompt': pano_prompts
     }
