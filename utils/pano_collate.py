@@ -11,7 +11,7 @@ def pano_collate_fn(batch):
 
     for item in batch:
         # Convert 'image' from NumPy to a torch.Tensor
-        images.append(torch.from_numpy(item['image']).unsqueeze(0))
+        images.append(torch.from_numpy(item['image']))
         panos.append(torch.from_numpy(item['pano']))
         
         # The single merged textual prompt for this sample

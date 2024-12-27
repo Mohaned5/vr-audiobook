@@ -62,9 +62,6 @@ class PanFusion(PanoGenerator):
         return pers_prompt_embd, pano_prompt_embd
 
     def training_step(self, batch, batch_idx):
-        print(f"Batch images shape: {batch['images'].shape}")      # Expected: [B, 1, 3, 1024, 2048]
-        print(f"Pano tensor shape: {batch['pano'].shape}")        # Expected: [B, 3, 1024, 2048] or similar
-        print(f"Pano prompts: {batch['pano_prompt']}")  
         device = batch['images'].device
         latents = self.encode_image(batch['images'], self.vae)
         b, m, c, h, w = latents.shape
