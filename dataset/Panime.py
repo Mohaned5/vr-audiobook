@@ -18,7 +18,8 @@ class PanimeDataset(PanoDataset):
         file_map = {
             "train": "train.json",
             "val": "val.json",
-            "test": "test.json"
+            "test": "test.json",
+            "predict": "val.json"
         }
         if mode not in file_map:
             raise ValueError(f"Invalid mode: {mode}. Expected one of {list(file_map.keys())}.")
