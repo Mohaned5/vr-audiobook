@@ -79,6 +79,7 @@ def cli_main():
                     "config": "ds_config.json"
                 }
             },
+            "accumulate_grad_batches": 2,
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
