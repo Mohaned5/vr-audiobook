@@ -4,26 +4,18 @@ import random
 import numpy as np
 import torch
 from glob import glob
-import cv2
 from PIL import Image
+import cv2
 import lightning as L
 
 from einops import rearrange
 from abc import abstractmethod
-
 from utils.pano import Equirectangular, random_sample_camera, horizon_sample_camera, icosahedron_sample_camera
 from external.Perspective_and_Equirectangular import mp2e
 from .PanoDataset import PanoDataset, PanoDataModule, get_K_R
 
 
-############################
-# PanimeDataset
-############################
 class PanimeDataset(PanoDataset):
-    """
-    Loads panoramas at 2048×1024 from disk, then downscales to 1024×512.
-    Loads perspective images at 512×512 from disk, then downscales to 256×256.
-    """
 
     def load_split(self, mode):
         split_file = os.path.join(self.data_dir, f"{mode}.json")
@@ -35,9 +27,11 @@ class PanimeDataset(PanoDataset):
 
         new_data = []
         for sample in all_data:
+            # Create a unique pano_id from the file name (or any logic you prefer)
             pano_filename = os.path.basename(sample["pano"])
             pano_id = os.path.splitext(pano_filename)[0]
 
+            # We'll store everything we need in a single dict
             entry = {
                 "pano_id": pano_id,
                 "pano_path": os.path.join(self.data_dir, sample["pano"]),
@@ -50,7 +44,12 @@ class PanimeDataset(PanoDataset):
         return new_data
 
     def scan_results(self, result_dir):
+        """
+        If your results are saved under result_dir/<pano_id>/pano.png,
+        then we can detect them by scanning all subfolders in result_dir.
+        """
         folder_paths = glob(os.path.join(result_dir, '*'))
+        # Extract folder names that might be valid pano_ids
         results_ids = {
             os.path.basename(p)
             for p in folder_paths
@@ -61,103 +60,64 @@ class PanimeDataset(PanoDataset):
     def get_data(self, idx):
         data = self.data[idx].copy()
 
-        # Repeat logic for predict mode
+        # 1) If in predict mode with repeated sampling
         if self.mode == 'predict' and self.config['repeat_predict'] > 1:
             data['pano_id'] = f"{data['pano_id']}_{data['repeat_id']:06d}"
 
-        # Possibly apply unconditioned training ratio
+        # 2) Possibly apply unconditioned training ratio
         if self.mode == 'train' and self.result_dir is None and random.random() < self.config['uncond_ratio']:
             data['pano_prompt'] = ""
             data['prompts'] = [""] * len(data['prompts'])
 
-        # Parse camera data
+        # 3) Build 'cameras' dict in the format PanFusion expects
         cam_data = data['cameras_data']
         FoV = np.array(cam_data['FoV'][0], dtype=np.float32)
         theta = np.array(cam_data['theta'][0], dtype=np.float32)
         phi = np.array(cam_data['phi'][0], dtype=np.float32)
 
-        # We'll store the perspective images in memory at 256×256
         cameras = {
-            "height": 256,
-            "width": 256,
-            "FoV": FoV,
-            "theta": theta,
-            "phi": phi,
+            # If you want each perspective to be 256×256, set these to pers_resolution
+            # or keep them as you like. Here we hard-code to 512 as an example.
+            'height': 256,
+            'width': 256,
+            'FoV': FoV,
+            'theta': theta,
+            'phi': phi,
         }
 
-        # Intrinsics/extrinsics for 256×256
+        # Compute intrinsics & extrinsics
         Ks, Rs = [], []
         for f, t, p in zip(FoV, theta, phi):
-            K, R = get_K_R(f, t, p, 256, 256)
+            K, R = get_K_R(
+                f, t, p,
+                self.config['pers_resolution'],
+                self.config['pers_resolution']
+            )
             Ks.append(K)
             Rs.append(R)
-        cameras["K"] = np.stack(Ks).astype(np.float32)
-        cameras["R"] = np.stack(Rs).astype(np.float32)
+        cameras['K'] = np.stack(Ks).astype(np.float32)
+        cameras['R'] = np.stack(Rs).astype(np.float32)
 
-        data["prompt"] = data["prompts"]
-        data["cameras"] = cameras
-        # The panorama in memory: 1024×512
-        data["height"] = 512
-        data["width"] = 1024
+        # 4) Save everything the pipeline expects
+        data['prompt'] = data['prompts']
+        data['cameras'] = cameras
+        data['height'] = self.config['pano_height']
+        data['width'] = self.config['pano_height'] * 2  # typical equirect (2:1 ratio)
 
-        # -----------------------
-        # 1) Load & downscale Pano
-        # -----------------------
-        if self.mode != "predict":
-            pano = cv2.imread(data["pano_path"])  # 2048×1024 on disk
-            pano = cv2.cvtColor(pano, cv2.COLOR_BGR2RGB)
-            # Downscale to 1024×512
-            pano_resized = cv2.resize(pano, (1024, 512), interpolation=cv2.INTER_AREA)
-            # Convert to shape [C, H, W], normalized to -1..1 if needed
-            pano_resized = pano_resized.astype(np.float32)
-            if self.result_dir is None:
-                pano_resized = (pano_resized / 127.5) - 1.0
-            pano_resized = rearrange(pano_resized, "h w c -> 1 c h w")
-            data["pano"] = pano_resized
+        # 5) Provide the path for the pano
+        if self.mode != 'predict':
+            data['pano_path'] = data['pano_path']
 
-        # ----------------------------------
-        # 2) Load & downscale Perspective IMGs
-        # ----------------------------------
-        # If your pipeline actually needs them as "GT" or references
-        # (the default PanFusion might rely on equirect->pers transform,
-        # but if you do want them, here's how to load & store them).
-        pers_list = []
-        for img_path in data["images_paths"]:
-            pers_img = cv2.imread(img_path)  # 512×512 on disk
-            if pers_img is None:
-                # skip or raise error if file not found
-                continue
-            pers_img = cv2.cvtColor(pers_img, cv2.COLOR_BGR2RGB)
-            # Downscale to 256×256
-            pers_img = cv2.resize(pers_img, (256, 256), interpolation=cv2.INTER_AREA)
-            pers_img = pers_img.astype(np.float32)
-            # If not predicting, we can normalize to -1..1
-            if self.mode == "train" and self.result_dir is None:
-                pers_img = (pers_img / 127.5) - 1.0
-            pers_list.append(pers_img)
-
-        if pers_list:
-            pers_array = np.stack(pers_list)  # shape [N, 256, 256, 3]
-            # reorder to [N, 3, 256, 256]
-            pers_array = rearrange(pers_array, "n h w c -> n c h w")
-            data["images"] = pers_array
-
-        # If there's a results directory, set path for predicted pano
+        # 6) If there's a results directory, set path for predicted pano
         if self.result_dir is not None:
-            data["pano_pred_path"] = os.path.join(self.result_dir, data["pano_id"], "pano.png")
+            data['pano_pred_path'] = os.path.join(self.result_dir, data['pano_id'], 'pano.png')
 
         return data
 
 
-############################
-# PanimeDataModule
-############################
 class PanimeDataModule(PanoDataModule):
     """
-    A stripped-down data module focusing on training (and optionally predict),
-    with in-memory downscale:
-      - Panorama: 2048×1024 -> 1024×512
-      - Perspective: 512×512 -> 256×256
+    A stripped-down data module focusing only on training (and optionally predict).
     """
 
     def __init__(
@@ -167,19 +127,26 @@ class PanimeDataModule(PanoDataModule):
     ):
         super().__init__(data_dir=data_dir, **kwargs)
         self.save_hyperparameters()
+        # Use PanimeDataset instead of the base PanoDataset
         self.dataset_cls = PanimeDataset
 
     def setup(self, stage=None):
+        # Set up only the training set (and predict if you want).
+        # Everything related to validation or testing is commented out.
+        
+        # Training dataset
         if stage in ('fit', None):
             self.train_dataset = self.dataset_cls(self.hparams, mode='train')
 
-        # Comment out val/test if you don't need them
+        # # Commenting out validation setup
         # if stage in ('fit', 'validate', None):
         #     self.val_dataset = self.dataset_cls(self.hparams, mode='val')
 
+        # # Commenting out test setup
         # if stage in ('test', None):
         #     self.test_dataset = self.dataset_cls(self.hparams, mode='test')
 
+        # Predict dataset (optional)
         if stage in ('predict', None):
             self.predict_dataset = self.dataset_cls(self.hparams, mode='predict')
 
@@ -192,12 +159,24 @@ class PanimeDataModule(PanoDataModule):
             drop_last=True
         )
 
+    # Commenting out val_dataloader and test_dataloader
     # def val_dataloader(self):
-    #     ...
-    #
+    #     return torch.utils.data.DataLoader(
+    #         self.val_dataset,
+    #         batch_size=self.hparams.batch_size,
+    #         shuffle=False,
+    #         num_workers=self.hparams.num_workers,
+    #         drop_last=False
+    #     )
+
     # def test_dataloader(self):
-    #     ...
-    #
+    #     return torch.utils.data.DataLoader(
+    #         self.test_dataset,
+    #         batch_size=self.hparams.batch_size,
+    #         shuffle=False,
+    #         num_workers=self.hparams.num_workers,
+    #         drop_last=False
+    #     )
 
     def predict_dataloader(self):
         return torch.utils.data.DataLoader(
