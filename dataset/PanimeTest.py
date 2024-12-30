@@ -60,7 +60,6 @@ class PanimeDataset(PanoDataset):
     def get_data(self, idx):
         data = self.data[idx].copy()
 
-        # Construct the sample to return
         # 1) If in predict mode with repeated sampling
         if self.mode == 'predict' and self.config['repeat_predict'] > 1:
             data['pano_id'] = f"{data['pano_id']}_{data['repeat_id']:06d}"
@@ -71,13 +70,14 @@ class PanimeDataset(PanoDataset):
             data['prompts'] = [""] * len(data['prompts'])
 
         # 3) Build 'cameras' dict in the format PanFusion expects
-        #    Here, 'FoV', 'theta', 'phi' might be 2D lists: e.g. shape [1, M]
         cam_data = data['cameras_data']
         FoV = np.array(cam_data['FoV'][0], dtype=np.float32)
         theta = np.array(cam_data['theta'][0], dtype=np.float32)
         phi = np.array(cam_data['phi'][0], dtype=np.float32)
 
         cameras = {
+            # If you want each perspective to be 256×256, set these to pers_resolution
+            # or keep them as you like. Here we hard-code to 512 as an example.
             'height': 512,
             'width': 512,
             'FoV': FoV,
@@ -88,7 +88,11 @@ class PanimeDataset(PanoDataset):
         # Compute intrinsics & extrinsics
         Ks, Rs = [], []
         for f, t, p in zip(FoV, theta, phi):
-            K, R = get_K_R(f, t, p, self.config['pers_resolution'], self.config['pers_resolution'])
+            K, R = get_K_R(
+                f, t, p,
+                self.config['pers_resolution'],
+                self.config['pers_resolution']
+            )
             Ks.append(K)
             Rs.append(R)
         cameras['K'] = np.stack(Ks).astype(np.float32)
@@ -113,29 +117,72 @@ class PanimeDataset(PanoDataset):
 
 class PanimeDataModule(PanoDataModule):
     """
-    The custom DataModule for your dataset, similar to Matterport3D,
-    but referencing PanimeDataset as the dataset class.
+    A stripped-down data module focusing only on training (and optionally predict).
     """
 
     def __init__(
         self,
         data_dir: str = 'data/Panime',
-        # All other arguments same as base class...
-        # You can override or add new ones if needed.
         **kwargs
     ):
         super().__init__(data_dir=data_dir, **kwargs)
         self.save_hyperparameters()
-        # We set the dataset class to PanimeDataset
+        # Use PanimeDataset instead of the base PanoDataset
         self.dataset_cls = PanimeDataset
 
     def setup(self, stage=None):
-        # Exactly like base, but with PanimeDataset
+        # Set up only the training set (and predict if you want).
+        # Everything related to validation or testing is commented out.
+        
+        # Training dataset
         if stage in ('fit', None):
             self.train_dataset = self.dataset_cls(self.hparams, mode='train')
-        if stage in ('fit', 'validate', None):
-            self.val_dataset = self.dataset_cls(self.hparams, mode='val')
-        if stage in ('test', None):
-            self.test_dataset = self.dataset_cls(self.hparams, mode='test')
+
+        # # Commenting out validation setup
+        # if stage in ('fit', 'validate', None):
+        #     self.val_dataset = self.dataset_cls(self.hparams, mode='val')
+
+        # # Commenting out test setup
+        # if stage in ('test', None):
+        #     self.test_dataset = self.dataset_cls(self.hparams, mode='test')
+
+        # Predict dataset (optional)
         if stage in ('predict', None):
             self.predict_dataset = self.dataset_cls(self.hparams, mode='predict')
+
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.train_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=True,
+            num_workers=self.hparams.num_workers,
+            drop_last=True
+        )
+
+    # Commenting out val_dataloader and test_dataloader
+    # def val_dataloader(self):
+    #     return torch.utils.data.DataLoader(
+    #         self.val_dataset,
+    #         batch_size=self.hparams.batch_size,
+    #         shuffle=False,
+    #         num_workers=self.hparams.num_workers,
+    #         drop_last=False
+    #     )
+
+    # def test_dataloader(self):
+    #     return torch.utils.data.DataLoader(
+    #         self.test_dataset,
+    #         batch_size=self.hparams.batch_size,
+    #         shuffle=False,
+    #         num_workers=self.hparams.num_workers,
+    #         drop_last=False
+    #     )
+
+    def predict_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.predict_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            drop_last=False
+        )
