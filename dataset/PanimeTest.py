@@ -119,7 +119,7 @@ class PanimeDataModule(PanoDataModule):
 
     def __init__(
         self,
-        data_dir: str = 'data/',
+        data_dir: str = 'data/Panime',
         # All other arguments same as base class...
         # You can override or add new ones if needed.
         **kwargs
