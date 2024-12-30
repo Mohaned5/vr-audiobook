@@ -9,6 +9,7 @@ from jsonargparse import lazy_instance
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
+from lightning.pytorch.strategies import DeepSpeedStrategy
 
 # def sanity_check_data(data_module):
 #     train_loader = data_module.train_dataloader()
@@ -65,13 +66,14 @@ def cli_main():
     # data_module.setup(stage='fit')
     # sanity_check_data(data_module)
     
+    ds_strategy = DeepSpeedStrategy(config="ds_config.json")
     cli = MyLightningCLI(
         trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': 'deepspeed_stage_2_offload',
+            'strategy': ds_strategy,
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
