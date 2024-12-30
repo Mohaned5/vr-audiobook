@@ -9,14 +9,6 @@ from jsonargparse import lazy_instance
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
-from lightning.pytorch.strategies import DeepSpeedStrategy
-
-# def sanity_check_data(data_module):
-#     train_loader = data_module.train_dataloader()
-#     for batch in data_module.train_dataloader():
-#         print(f"Batch keys: {batch.keys()}")  # Should include 'pano', 'image', and 'pano_prompt'
-#         print(f"Pano shape: {batch['pano'].shape}")  # Should match [B, 1, H, W]
-#         break
 
 
 def cli_main():
@@ -62,24 +54,13 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
-    # data_module = PanimeDataModule()  # Add necessary arguments if required
-    # data_module.setup(stage='fit')
-    # sanity_check_data(data_module)
-    
-    ds_strategy = DeepSpeedStrategy(config="ds_config.json")
     cli = MyLightningCLI(
         trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            "strategy": {
-                "class_path": "lightning.pytorch.strategies.deepspeed.DeepSpeedStrategy",
-                "init_args": {
-                    "config": "ds_config.json"
-                }
-            },
-            "accumulate_grad_batches": 2,
+            'strategy': 'fsdp',
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
