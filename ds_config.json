@@ -12,7 +12,7 @@
     },
   
     "optimizer": {
-      "type": "CPUAdam",
+      "type": "Adam",
       "params": {
         "lr": 0.0001,
         "betas": [
