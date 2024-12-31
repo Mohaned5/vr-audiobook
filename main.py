@@ -61,7 +61,6 @@ def cli_main():
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
             'strategy': 'fsdp',
-            'fsdp_sharding_strategy': 'FULL_SHARD',
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
