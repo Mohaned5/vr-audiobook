@@ -12,7 +12,7 @@ dependencies:
     - diffusers==0.24.0
     - transformers
     - lightning[pytorch-extra]
-    - torch==2.0.1
+    - torch==2.1
     - opencv-python
     - protobuf
     - wrapt
