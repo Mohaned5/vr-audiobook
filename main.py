@@ -10,6 +10,7 @@ from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
 from lightning.pytorch.strategies import FSDPStrategy
+from jsonargparse import lazy_instance
 
 
 def cli_main():
