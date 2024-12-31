@@ -64,7 +64,7 @@ def cli_main():
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
             'strategy': lazy_instance(
-                'lightning.pytorch.strategies.FSDPStrategy',
+                FSDPStrategy,
                 sharding_strategy="FULL_SHARD",  # Options: FULL_SHARD, SHARD_GRAD_OP, etc.
                 cpu_offload=True,               # Offload model parameters to CPU if needed
             ),
