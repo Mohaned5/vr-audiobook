@@ -54,6 +54,14 @@ def cli_main():
 
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
+        
+        def configure_optimizers(self):
+            optimizer = torch.optim.Adam(
+                self.trainer.model.parameters(),  # Correctly reference FSDP-wrapped parameters
+                lr=self.lr,
+                weight_decay=self.weight_decay
+            )
+            return optimizer
 
     cli = MyLightningCLI(
         trainer_class=Trainer,
@@ -61,11 +69,7 @@ def cli_main():
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': FSDPStrategy(
-                sharding_strategy="FULL_SHARD",  # Or use SHARD_GRAD_OP, NO_SHARD if needed
-                cpu_offload=False,              # Optional: Offload to CPU if needed
-                use_orig_params=True            # Optional: Use original parameter shapes
-            ),
+            'strategy': FSDPStrategy(cpu_offload=True),
             'fsdp_sharding_strategy': 'FULL_SHARD',
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
