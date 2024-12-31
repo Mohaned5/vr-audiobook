@@ -9,6 +9,7 @@ from jsonargparse import lazy_instance
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
+from lightning.pytorch.strategies import FSDPStrategy
 
 
 def cli_main():
@@ -60,7 +61,11 @@ def cli_main():
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': 'fsdp',
+            'strategy': FSDPStrategy(
+                sharding_strategy="FULL_SHARD",  # Or use SHARD_GRAD_OP, NO_SHARD if needed
+                cpu_offload=False,              # Optional: Offload to CPU if needed
+                use_orig_params=True            # Optional: Use original parameter shapes
+            ),
             'fsdp_sharding_strategy': 'FULL_SHARD',
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
