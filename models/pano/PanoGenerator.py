@@ -11,6 +11,7 @@ import copy
 from utils.pano import pad_pano, unpad_pano
 from ..modules.utils import WandbLightningModule
 from diffusers import ControlNetModel
+from torch.cuda.amp import autocast
 
 
 class PanoBase(WandbLightningModule):
@@ -42,20 +43,36 @@ class PanoBase(WandbLightningModule):
             return ' '.join([self.hparams.pers_prompt_prefix, pers_prompt])
         return [self.add_pers_prompt_prefix(p) for p in pers_prompt]
 
-    def get_pano_prompt(self, batch):
-        if self.hparams.mv_pano_prompt:
-            prompts = list(map(list, zip(*batch['prompt'])))
-            pano_prompt = ['. '.join(p1) if p2 else '' for p1, p2 in zip(prompts, batch['pano_prompt'])]
-        else:
-            pano_prompt = batch['pano_prompt']
-        return self.add_pano_prompt_prefix(pano_prompt)
-
     def get_pers_prompt(self, batch):
-        if self.hparams.copy_pano_prompt:
-            prompts = sum([[p] * batch['cameras']['height'].shape[-1] for p in batch['pano_prompt']], [])
-        else:
-            prompts = sum(map(list, zip(*batch['prompt'])), [])
-        return self.add_pers_prompt_prefix(prompts)
+        # Construct a single prompt string for each perspective
+        base_prompt = batch.get('prompt', [''])[0]  # since prompt might be a list
+        mood = batch.get('mood', [''])[0]
+        tags = ', '.join(batch.get('tags', [[]])[0])
+        negative_tags = ', '.join(batch.get('negative_tags', [[]])[0])
+        lighting = batch.get('lighting', [''])[0]
+
+        full_prompt = (f"{base_prompt}, mood: {mood}, tags: {tags}, "
+                    f"lighting: {lighting}, negative tags: {negative_tags}")
+        
+        # If you have multiple cameras, replicate the prompt for each camera
+        num_cameras = batch['images'].shape[1]
+        pers_prompts = [full_prompt for _ in range(num_cameras)]
+        return pers_prompts
+
+    def get_pano_prompt(self, batch):
+        # Pano prompt typically is just one per batch entry
+        base_prompt = batch.get('prompt', [''])[0]
+        mood = batch.get('mood', [''])[0]
+        tags = ', '.join(batch.get('tags', [[]])[0])
+        negative_tags = ', '.join(batch.get('negative_tags', [[]])[0])
+        lighting = batch.get('lighting', [''])[0]
+
+        full_prompt = (f"{base_prompt}, mood: {mood}, tags: {tags}, "
+                    f"lighting: {lighting}, negative tags: {negative_tags}")
+        
+        # One pano prompt per batch item
+        pano_prompts = [full_prompt for _ in range(batch['images'].shape[0])]
+        return pano_prompts
 
 
 class PanoGenerator(PanoBase):
@@ -115,19 +132,19 @@ class PanoGenerator(PanoBase):
 
     def load_shared(self):
         self.tokenizer = CLIPTokenizer.from_pretrained(
-            self.hparams.model_id, subfolder="tokenizer", torch_dtype=torch.float16, use_safetensors=True)
+            self.hparams.model_id, subfolder="tokenizer", torch_dtype=torch.float32, use_safetensors=True)
         self.text_encoder = CLIPTextModel.from_pretrained(
-            self.hparams.model_id, subfolder="text_encoder", torch_dtype=torch.float16)
+            self.hparams.model_id, subfolder="text_encoder", torch_dtype=torch.float32)
         self.text_encoder.requires_grad_(False)
 
         self.vae = AutoencoderKL.from_pretrained(
-            self.hparams.model_id, subfolder="vae", torch_dtype=torch.float16, use_safetensors=True)
+            self.hparams.model_id, subfolder="vae", torch_dtype=torch.float32, use_safetensors=True)
         self.vae.eval()
         self.vae.requires_grad_(False)
         self.vae = torch.compile(self.vae)
 
         self.scheduler = DDIMScheduler.from_pretrained(
-            self.hparams.model_id, subfolder="scheduler", torch_dtype=torch.float16, use_safetensors=True)
+            self.hparams.model_id, subfolder="scheduler", torch_dtype=torch.float32, use_safetensors=True)
 
     def add_lora(self, unet):
         lora_attn_procs = {}
@@ -158,7 +175,7 @@ class PanoGenerator(PanoBase):
 
     def load_branch(self, add_lora, train_lora, add_cn):
         unet = UNet2DConditionModel.from_pretrained(
-            self.hparams.model_id, subfolder="unet", torch_dtype=torch.float16, use_safetensors=True)
+            self.hparams.model_id, subfolder="unet", torch_dtype=torch.float32, use_safetensors=True)
         unet.enable_xformers_memory_efficient_attention()
         unet.enable_gradient_checkpointing()
 
@@ -300,7 +317,9 @@ class PanoGenerator(PanoBase):
     @torch.no_grad()
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         output_dir = os.path.join(self.logger.save_dir, 'predict', batch['pano_id'][0])
-        self.inference_and_save(batch, output_dir, 'jpg')
+        with autocast():  # Mixed precision
+            self.inference_and_save(batch, output_dir, 'jpg')
+        torch.cuda.empty_cache()  # Clear GPU memory after each batch
 
     @abstractmethod
     def inference_and_save(self, batch, output_dir, ext):
