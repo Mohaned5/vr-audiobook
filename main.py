@@ -19,7 +19,7 @@ def cli_main():
     if 'SLURM_JOB_NAME' in os.environ:
         del os.environ["SLURM_JOB_NAME"]
 
-    torch.set_float32_matmul_precision('medium')
+    torch.set_float16_matmul_precision('medium')
 
     wandb_id = os.environ.get('WANDB_RUN_ID', wandb.util.generate_id())
     exp_dir = os.path.join('logs', wandb_id)
