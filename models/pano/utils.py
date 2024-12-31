@@ -7,7 +7,7 @@ import numpy as np
 from utils.pano import pad_pano, unpad_pano
 
 
-def get_masks(pers_h, pers_w, equi_h, equi_w, cameras, device, dtype=torch.float32):
+def get_masks(pers_h, pers_w, equi_h, equi_w, cameras, device, dtype=torch.float16):
     # pers_masks: attention mask in perspective images of a pixel in equirectangular image
     # (m, equi_h, equi_w, pers_h, pers_w)
     # equi_masks: attention mask in equirectangular images of a pixel in perspective image
@@ -84,7 +84,7 @@ def get_masks(pers_h, pers_w, equi_h, equi_w, cameras, device, dtype=torch.float
     return pers_masks, equi_masks
 
 
-def get_coords(pers_h, pers_w, equi_h, equi_w, cameras, device, dtype=torch.float32):
+def get_coords(pers_h, pers_w, equi_h, equi_w, cameras, device, dtype=torch.float16):
     # pers_coords: polar coordinates of a pixel in perspective images
     # (m, pers_h, pers_w, 2)
     # equi_coords: polar coordinates of a pixel in equirectangular images
