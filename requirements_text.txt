@@ -184,7 +184,7 @@ tornado==6.4
 tqdm==4.66.2
 traitlets==5.14.2
 transformers==4.26.1
-triton==2.0.0
+triton==2.1.0
 typer==0.9.4
 typeshed-client==2.5.1
 typing-extensions==4.11.0
