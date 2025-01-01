@@ -68,9 +68,7 @@ def cli_main():
             'max_epochs': 10,
             'precision': 16,
             'callbacks': [checkpoint_callback, lr_monitor],
-            'logger': wandb_logger,
-            'gradient_accumulation_steps': 4,  # Accumulate gradients over 4 steps
-        })
+            'logger': wandb_logger        })
 
 
 if __name__ == '__main__':
