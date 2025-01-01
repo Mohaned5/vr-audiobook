@@ -65,9 +65,12 @@ def cli_main():
         trainer_defaults={
             'strategy': lazy_instance(
                 FSDPStrategy,
-                sharding_strategy="FULL_SHARD",  # Options: FULL_SHARD, SHARD_GRAD_OP, etc.
-                cpu_offload=True,               # Offload model parameters to CPU if needed
+                sharding_strategy="FULL_SHARD",  # FULL_SHARD ensures all parameters and gradients are sharded
+                auto_wrap_policy=None,          # Specify if you need to wrap specific layers
+                cpu_offload=False,              # Consider disabling CPU offloading
+                activation_checkpointing=True   # Checkpoint activations to save memory
             ),
+
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
