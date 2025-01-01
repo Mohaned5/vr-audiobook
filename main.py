@@ -9,6 +9,8 @@ from jsonargparse import lazy_instance
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
+from lightning.pytorch.strategies import FSDPStrategy
+from jsonargparse import lazy_instance
 
 
 def cli_main():
@@ -54,13 +56,18 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
+
     cli = MyLightningCLI(
         trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': 'fdsp',
+            'strategy': lazy_instance(
+                FSDPStrategy,
+                sharding_strategy="FULL_SHARD",  # Options: FULL_SHARD, SHARD_GRAD_OP, etc.
+                cpu_offload=True,               # Offload model parameters to CPU if needed
+            ),
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
