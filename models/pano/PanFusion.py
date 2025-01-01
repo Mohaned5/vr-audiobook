@@ -22,9 +22,21 @@ class PanFusion(PanoGenerator):
         super().__init__(**kwargs)
         self.save_hyperparameters()
 
-    def forward_mv_base_model(self, *args, **kwargs):
-        return checkpoint(self.mv_base_model, *args, **kwargs)
-
+    def forward_mv_base_model(self, noise_z, pano_noise_z, t, pers_prompt_embd, pano_prompt_embd, cameras, images_layout_cond, pano_layout_cond):
+        """
+        Forward pass for mv_base_model with gradient checkpointing.
+        """
+        return checkpoint(
+            self.mv_base_model,
+            noise_z,
+            pano_noise_z,
+            t,
+            pers_prompt_embd,
+            pano_prompt_embd,
+            cameras,
+            images_layout_cond,
+            pano_layout_cond
+        )
     def instantiate_model(self):
         pano_unet, cn = self.load_pano()
         unet, pers_cn = self.load_pers()
@@ -94,6 +106,7 @@ class PanFusion(PanoGenerator):
         denoise, pano_denoise = self.forward_mv_base_model(
             noise_z, pano_noise_z, t, pers_prompt_embd, pano_prompt_embd, batch['cameras'],
             batch.get('images_layout_cond'), batch.get('pano_layout_cond'))
+
 
         # eps mode
         loss_pers = torch.nn.functional.mse_loss(denoise, noise)
