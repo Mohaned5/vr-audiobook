@@ -7,6 +7,8 @@ from PIL import Image
 from external.Perspective_and_Equirectangular import e2p
 from einops import rearrange
 from lightning.pytorch.utilities import rank_zero_only
+import torch
+from torch.utils.checkpoint import checkpoint, checkpoint_sequential
 
 
 class PanFusion(PanoGenerator):
@@ -20,12 +22,17 @@ class PanFusion(PanoGenerator):
         super().__init__(**kwargs)
         self.save_hyperparameters()
 
+    def forward_mv_base_model(self, *args, **kwargs):
+        return checkpoint(self.mv_base_model, *args, **kwargs)
+
     def instantiate_model(self):
         pano_unet, cn = self.load_pano()
         unet, pers_cn = self.load_pers()
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
+        self.mv_base_model = checkpoint_sequential(self.mv_base_model, segments=2)
+
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
         cameras = {k: rearrange(v, 'b m ... -> (b m) ...') for k, v in cameras.items()}
@@ -84,7 +91,7 @@ class PanFusion(PanoGenerator):
         pano_noise_z = self.scheduler.add_noise(pano_latent, pano_noise, t)
         t = t[:, None].repeat(1, m)
 
-        denoise, pano_denoise = self.mv_base_model(
+        denoise, pano_denoise = self.forward_mv_base_model(
             noise_z, pano_noise_z, t, pers_prompt_embd, pano_prompt_embd, batch['cameras'],
             batch.get('images_layout_cond'), batch.get('pano_layout_cond'))
 
