@@ -71,9 +71,9 @@ class PanimeDataset(PanoDataset):
 
         # 3) Build 'cameras' dict in the format PanFusion expects
         cam_data = data['cameras_data']
-        FoV = np.array(cam_data['FoV'][0], dtype=np.float32)
-        theta = np.array(cam_data['theta'][0], dtype=np.float32)
-        phi = np.array(cam_data['phi'][0], dtype=np.float32)
+        FoV = np.array(cam_data['FoV'][0], dtype=np.float16)
+        theta = np.array(cam_data['theta'][0], dtype=np.float16)
+        phi = np.array(cam_data['phi'][0], dtype=np.float16)
 
         cameras = {
             # If you want each perspective to be 256×256, set these to pers_resolution
@@ -95,8 +95,8 @@ class PanimeDataset(PanoDataset):
             )
             Ks.append(K)
             Rs.append(R)
-        cameras['K'] = np.stack(Ks).astype(np.float32)
-        cameras['R'] = np.stack(Rs).astype(np.float32)
+        cameras['K'] = np.stack(Ks).astype(np.float16)
+        cameras['R'] = np.stack(Rs).astype(np.float16)
 
         # 4) Save everything the pipeline expects
         data['prompt'] = data['prompts']
