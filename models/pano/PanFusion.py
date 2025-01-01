@@ -7,6 +7,7 @@ from PIL import Image
 from external.Perspective_and_Equirectangular import e2p
 from einops import rearrange
 from lightning.pytorch.utilities import rank_zero_only
+from torch.utils.checkpoint import checkpoint
 
 
 class PanFusion(PanoGenerator):
@@ -84,9 +85,12 @@ class PanFusion(PanoGenerator):
         pano_noise_z = self.scheduler.add_noise(pano_latent, pano_noise, t)
         t = t[:, None].repeat(1, m)
 
-        denoise, pano_denoise = self.mv_base_model(
-            noise_z, pano_noise_z, t, pers_prompt_embd, pano_prompt_embd, batch['cameras'],
-            batch.get('images_layout_cond'), batch.get('pano_layout_cond'))
+        denoise, pano_denoise = checkpoint(
+            self.mv_base_model,
+            noise_z, pano_noise_z, t, pers_prompt_embd, pano_prompt_embd,
+            batch['cameras'], batch.get('images_layout_cond'), batch.get('pano_layout_cond')
+        )
+
 
         # eps mode
         loss_pers = torch.nn.functional.mse_loss(denoise, noise)
