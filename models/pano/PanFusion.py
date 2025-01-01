@@ -8,7 +8,7 @@ from external.Perspective_and_Equirectangular import e2p
 from einops import rearrange
 from lightning.pytorch.utilities import rank_zero_only
 import torch
-from torch.utils.checkpoint import checkpoint, checkpoint_sequential
+from torch.utils.checkpoint import checkpoint
 
 
 class PanFusion(PanoGenerator):
@@ -24,10 +24,12 @@ class PanFusion(PanoGenerator):
 
     def forward_mv_base_model(self, noise_z, pano_noise_z, t, pers_prompt_embd, pano_prompt_embd, cameras, images_layout_cond, pano_layout_cond):
         """
-        Forward pass for mv_base_model with gradient checkpointing.
+        Wraps the mv_base_model forward pass with gradient checkpointing.
         """
+        def forward_fn(*inputs):
+            return self.mv_base_model(*inputs)
         return checkpoint(
-            self.mv_base_model,
+            forward_fn,
             noise_z,
             pano_noise_z,
             t,
@@ -37,6 +39,7 @@ class PanFusion(PanoGenerator):
             images_layout_cond,
             pano_layout_cond
         )
+
     def instantiate_model(self):
         pano_unet, cn = self.load_pano()
         unet, pers_cn = self.load_pers()
@@ -98,8 +101,8 @@ class PanFusion(PanoGenerator):
         pano_noise, noise = self.init_noise(
             b, *pano_latent.shape[-2:], h, w, batch['cameras'], device)
 
-        noise_z = self.scheduler.add_noise(latents, noise, t)
-        pano_noise_z = self.scheduler.add_noise(pano_latent, pano_noise, t)
+        noise_z = self.scheduler.add_noise(latents, noise, t).requires_grad_()
+        pano_noise_z = self.scheduler.add_noise(pano_latent, pano_noise, t).requires_grad_()
         t = t[:, None].repeat(1, m)
 
         denoise, pano_denoise = self.forward_mv_base_model(
