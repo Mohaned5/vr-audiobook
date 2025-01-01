@@ -43,7 +43,6 @@ class PanFusion(PanoGenerator):
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
-        self.mv_base_model = checkpoint_sequential(self.mv_base_model, segments=2)
 
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
