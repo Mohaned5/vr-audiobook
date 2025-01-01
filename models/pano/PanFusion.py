@@ -7,8 +7,6 @@ from PIL import Image
 from external.Perspective_and_Equirectangular import e2p
 from einops import rearrange
 from lightning.pytorch.utilities import rank_zero_only
-import torch
-from torch.utils.checkpoint import checkpoint
 
 
 class PanFusion(PanoGenerator):
@@ -22,31 +20,12 @@ class PanFusion(PanoGenerator):
         super().__init__(**kwargs)
         self.save_hyperparameters()
 
-    def forward_mv_base_model(self, noise_z, pano_noise_z, t, pers_prompt_embd, pano_prompt_embd, cameras, images_layout_cond, pano_layout_cond):
-        """
-        Wraps the mv_base_model forward pass with gradient checkpointing.
-        """
-        def forward_fn(*inputs):
-            return self.mv_base_model(*inputs)
-        return checkpoint(
-            forward_fn,
-            noise_z,
-            pano_noise_z,
-            t,
-            pers_prompt_embd,
-            pano_prompt_embd,
-            cameras,
-            images_layout_cond,
-            pano_layout_cond
-        )
-
     def instantiate_model(self):
         pano_unet, cn = self.load_pano()
         unet, pers_cn = self.load_pers()
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
-
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
         cameras = {k: rearrange(v, 'b m ... -> (b m) ...') for k, v in cameras.items()}
@@ -101,14 +80,13 @@ class PanFusion(PanoGenerator):
         pano_noise, noise = self.init_noise(
             b, *pano_latent.shape[-2:], h, w, batch['cameras'], device)
 
-        noise_z = self.scheduler.add_noise(latents, noise, t).requires_grad_()
-        pano_noise_z = self.scheduler.add_noise(pano_latent, pano_noise, t).requires_grad_()
+        noise_z = self.scheduler.add_noise(latents, noise, t)
+        pano_noise_z = self.scheduler.add_noise(pano_latent, pano_noise, t)
         t = t[:, None].repeat(1, m)
 
-        denoise, pano_denoise = self.forward_mv_base_model(
+        denoise, pano_denoise = self.mv_base_model(
             noise_z, pano_noise_z, t, pers_prompt_embd, pano_prompt_embd, batch['cameras'],
             batch.get('images_layout_cond'), batch.get('pano_layout_cond'))
-
 
         # eps mode
         loss_pers = torch.nn.functional.mse_loss(denoise, noise)
