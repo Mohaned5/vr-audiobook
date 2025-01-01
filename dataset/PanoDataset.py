@@ -21,10 +21,10 @@ def get_K_R(FOV, THETA, PHI, height, width):
         [f, 0, cx],
         [0, f, cy],
         [0, 0,  1],
-    ], np.float16)
+    ], np.float32)
 
-    y_axis = np.array([0.0, 1.0, 0.0], np.float16)
-    x_axis = np.array([1.0, 0.0, 0.0], np.float16)
+    y_axis = np.array([0.0, 1.0, 0.0], np.float32)
+    x_axis = np.array([1.0, 0.0, 0.0], np.float32)
     R1, _ = cv2.Rodrigues(y_axis * np.radians(THETA))
     R2, _ = cv2.Rodrigues(np.dot(R1, x_axis) * np.radians(PHI))
     R = R2 @ R1
@@ -113,8 +113,8 @@ class PanoDataset(torch.utils.data.Dataset):
                            self.config['pers_resolution'], self.config['pers_resolution'])
             Ks.append(K)
             Rs.append(R)
-        K = np.stack(Ks).astype(np.float16)
-        R = np.stack(Rs).astype(np.float16)
+        K = np.stack(Ks).astype(np.float32)
+        R = np.stack(Rs).astype(np.float32)
 
         cameras = {
             'height': np.full_like(theta, self.config['pers_resolution'], dtype=int),
@@ -143,8 +143,8 @@ class PanoDataset(torch.utils.data.Dataset):
             pano = pano.reshape(data['height'], data['width'], equi.equirectangular.shape[-1])
             images = np.stack(imgs)
             if self.result_dir is None and normalize:
-                images = (images.astype(np.float16)/127.5)-1
-                pano = (pano.astype(np.float16)/127.5 - 1)
+                images = (images.astype(np.float32)/127.5)-1
+                pano = (pano.astype(np.float32)/127.5 - 1)
             pano = rearrange(pano, 'h w c -> 1 c h w')
             images = rearrange(images, 'b h w c -> b c h w')
             return pano, images
@@ -157,7 +157,7 @@ class PanoDataset(torch.utils.data.Dataset):
         if 'layout_cond_path' in data:
             equirectangular = Equirectangular.from_file(data['layout_cond_path'])
             if self.config['layout_cond_type'] == 'distance_map':
-                equirectangular.equirectangular = equirectangular.equirectangular.astype(np.float16)[..., None] / 1e3
+                equirectangular.equirectangular = equirectangular.equirectangular.astype(np.float32)[..., None] / 1e3
                 depth_min = equirectangular.equirectangular.min()
                 depth_max = equirectangular.equirectangular.max()
                 equirectangular.equirectangular = 2.0 * (equirectangular.equirectangular - depth_min) / (depth_max - depth_min) - 1.0
