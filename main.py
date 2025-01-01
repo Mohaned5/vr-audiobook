@@ -60,17 +60,17 @@ def cli_main():
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': 'ddp_find_unused_parameters_false',
+            'strategy': 'ddp',
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
             'benchmark': True,
             'max_epochs': 10,
-            'precision': 16,
+            'precision': 'bf16',
             'callbacks': [checkpoint_callback, lr_monitor],
             'logger': wandb_logger,
-            'accumulate_grad_batches': 4,
-            'gradient_clip_val': 1.0
+            'accumulate_grad_batches': 16,
+            'gradient_clip_val': 1.0,
             })
 
 

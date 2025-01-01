@@ -184,5 +184,6 @@ class PanimeDataModule(PanoDataModule):
             batch_size=self.hparams.batch_size,
             shuffle=False,
             num_workers=self.hparams.num_workers,
+            pin_memory=True,
             drop_last=False
         )
