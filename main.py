@@ -56,17 +56,17 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
-        def before_fit(self):
-            # Apply PEFT to the PanFusion model before training
-            if self.model.hparams.enable_peft:
-            # Apply LoRA
-                lora_config = LoraConfig(**self.model.hparams.peft_config)
-                self.model.instantiate_model()
-                self.model.mv_base_model = get_peft_model(
-                    self.model.mv_base_model,
-                    lora_config,
-                )
-                self.model.mv_base_model.print_trainable_parameters()
+        # def before_fit(self):
+        #     # Apply PEFT to the PanFusion model before training
+        #     if self.model.hparams.enable_peft:
+        #     # Apply LoRA
+        #         lora_config = LoraConfig(**self.model.hparams.peft_config)
+        #         self.model.instantiate_model()
+        #         self.model.mv_base_model = get_peft_model(
+        #             self.model.mv_base_model,
+        #             lora_config,
+        #         )
+        #         self.model.mv_base_model.print_trainable_parameters()
 
 
 

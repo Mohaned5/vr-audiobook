@@ -17,22 +17,22 @@ class PanFusion(PanoGenerator):
             use_pers_prompt: bool = True,
             use_pano_prompt: bool = True,
             copy_pano_prompt: bool = True,
-            enable_peft: bool = True,
-            peft_config = {
-                "r": 16,
-                "lora_alpha": 32,
-                "lora_dropout": 0.1,
-                "target_modules": [
-                    "attn1.to_q",
-                    "attn1.to_k",
-                    "attn1.to_v",
-                    "attn1.to_out.0",
-                    "attn2.to_q",
-                    "attn2.to_k",
-                    "attn2.to_v",
-                    "attn2.to_out.0",
-                ]
-                },
+            # enable_peft: bool = True,
+            # peft_config = {
+            #     "r": 16,
+            #     "lora_alpha": 32,
+            #     "lora_dropout": 0.1,
+            #     "target_modules": [
+            #         "attn1.to_q",
+            #         "attn1.to_k",
+            #         "attn1.to_v",
+            #         "attn1.to_out.0",
+            #         "attn2.to_q",
+            #         "attn2.to_k",
+            #         "attn2.to_v",
+            #         "attn2.to_out.0",
+            #     ]
+                # },
             **kwargs
             ):
         super().__init__(**kwargs)
@@ -46,11 +46,11 @@ class PanFusion(PanoGenerator):
 
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
-        if self.hparams.enable_peft:
-            # Extract individual Linear layers from ModuleList
-            lora_config = LoraConfig(**self.hparams.peft_config)
-            self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
-            # self.mv_base_model.print_trainable_parameters()
+        # if self.hparams.enable_peft:
+        #     # Extract individual Linear layers from ModuleList
+        #     lora_config = LoraConfig(**self.hparams.peft_config)
+        #     self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
+        #     # self.mv_base_model.print_trainable_parameters()
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
         cameras = {k: rearrange(v, 'b m ... -> (b m) ...') for k, v in cameras.items()}
