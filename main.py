@@ -73,10 +73,10 @@ def cli_main():
                 print("\nTarget Modules for PEFT:")
                 for name, module in target_modules:
                     print(f"Module Name: {name}, Module: {module}")
-                lora_config = LoraConfig(**self.model.hparams.peft_config)
-                self.model.instantiate_model()
-                self.model.mv_base_model = get_peft_model(self.model.mv_base_model, lora_config)
-                self.model.mv_base_model.print_trainable_parameters()
+                # lora_config = LoraConfig(**self.model.hparams.peft_config)
+                # self.model.instantiate_model()
+                # self.model.mv_base_model = get_peft_model(self.model.mv_base_model, lora_config)
+                # self.model.mv_base_model.print_trainable_parameters()
 
 
 
