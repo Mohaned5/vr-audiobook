@@ -8,6 +8,7 @@ from external.Perspective_and_Equirectangular import e2p
 from einops import rearrange
 from lightning.pytorch.utilities import rank_zero_only
 from peft import get_peft_model, LoraConfig
+from transformers import AutoModelForCausalLM
 
 
 class PanFusion(PanoGenerator):
@@ -39,25 +40,9 @@ class PanFusion(PanoGenerator):
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
         if self.hparams.enable_peft:
             # Extract individual Linear layers from ModuleList
-            target_modules = []
-            for name, module in self.mv_base_model.named_modules():
-                if isinstance(module, torch.nn.Linear) and not any(
-                    keyword in name for keyword in ["_lora", "processor"]
-                ):
-                    target_modules.append(name)
+            model = AutoModelForCausalLM.from_pretrained("./logs/4142dlo4/checkpoints/last.ckpt")
 
-            print(f"Filtered LoRA target modules: {target_modules}")
-
-            target_modules = []
-            for name, module in self.mv_base_model.named_modules():
-                if isinstance(module, torch.nn.Linear) and any(
-                    keyword in name for keyword in [".to_q", ".to_k", ".to_v", ".to_out.0"]
-                ):
-                    target_modules.append(name)
-
-            print(f"SECOND Filtered LoRA target modules: {target_modules}")
-
-
+            print(model)
             lora_config = LoraConfig(**self.hparams.peft_config)
             self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
             self.mv_base_model.print_trainable_parameters()
