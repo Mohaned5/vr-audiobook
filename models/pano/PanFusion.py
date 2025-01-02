@@ -21,7 +21,6 @@ class PanFusion(PanoGenerator):
             ):
         super().__init__(**kwargs)
         self.save_hyperparameters()
-        self.enable_peft = enable_peft
         self.peft_config = {
             "r": 16,
             "lora_alpha": 32,
@@ -35,7 +34,7 @@ class PanFusion(PanoGenerator):
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
-        if self.enable_peft:
+        if self.hparams.enable_peft:
             lora_config = LoraConfig(**self.peft_config)
             self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
             self.mv_base_model.print_trainable_parameters()
