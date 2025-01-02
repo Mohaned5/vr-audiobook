@@ -5,7 +5,7 @@ from einops import rearrange
 from utils.pano import pad_pano, unpad_pano
 
 
-class mMultiViewBaseModel(nn.Module):
+class MultiViewBaseModel(nn.Module):
     def __init__(self, unet, pano_unet, pers_cn=None, pano_cn=None, pano_pad=True):
         super().__init__()
 
