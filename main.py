@@ -91,6 +91,7 @@ def cli_main():
             'callbacks': [checkpoint_callback, lr_monitor],
             'logger': wandb_logger
         })
+    
 
 
 if __name__ == '__main__':

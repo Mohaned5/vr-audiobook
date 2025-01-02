@@ -16,11 +16,12 @@ class PanFusion(PanoGenerator):
             use_pers_prompt: bool = True,
             use_pano_prompt: bool = True,
             copy_pano_prompt: bool = True,
+            enable_peft: bool = True,
             **kwargs
             ):
         super().__init__(**kwargs)
         self.save_hyperparameters()
-        self.enable_peft = True
+        self.enable_peft = enable_peft
         self.peft_config = {
             "r": 16,
             "lora_alpha": 32,
