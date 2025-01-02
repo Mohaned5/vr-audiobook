@@ -17,16 +17,17 @@ class PanFusion(PanoGenerator):
             use_pano_prompt: bool = True,
             copy_pano_prompt: bool = True,
             enable_peft: bool = True,
+            peft_config = {
+                "r": 16,
+                "lora_alpha": 32,
+                "lora_dropout": 0.1,
+                "task_type": "CAUSAL_LM"
+                },
             **kwargs
             ):
         super().__init__(**kwargs)
         self.save_hyperparameters()
-        self.peft_config = {
-            "r": 16,
-            "lora_alpha": 32,
-            "lora_dropout": 0.1,
-            "task_type": "CAUSAL_LM"
-        }
+        
 
     def instantiate_model(self):
         pano_unet, cn = self.load_pano()
@@ -35,7 +36,7 @@ class PanFusion(PanoGenerator):
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
         if self.hparams.enable_peft:
-            lora_config = LoraConfig(**self.peft_config)
+            lora_config = LoraConfig(**self.hparams.peft_config)
             self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
             self.mv_base_model.print_trainable_parameters()
 
