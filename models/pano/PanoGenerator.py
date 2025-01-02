@@ -132,19 +132,19 @@ class PanoGenerator(PanoBase):
 
     def load_shared(self):
         self.tokenizer = CLIPTokenizer.from_pretrained(
-            self.hparams.model_id, subfolder="tokenizer", torch_dtype=torch.float32, use_safetensors=True)
+            self.hparams.model_id, subfolder="tokenizer", torch_dtype=torch.float16, use_safetensors=True)
         self.text_encoder = CLIPTextModel.from_pretrained(
-            self.hparams.model_id, subfolder="text_encoder", torch_dtype=torch.float32)
+            self.hparams.model_id, subfolder="text_encoder", torch_dtype=torch.float16)
         self.text_encoder.requires_grad_(False)
 
         self.vae = AutoencoderKL.from_pretrained(
-            self.hparams.model_id, subfolder="vae", torch_dtype=torch.float32, use_safetensors=True)
+            self.hparams.model_id, subfolder="vae", torch_dtype=torch.float16, use_safetensors=True)
         self.vae.eval()
         self.vae.requires_grad_(False)
         self.vae = torch.compile(self.vae)
 
         self.scheduler = DDIMScheduler.from_pretrained(
-            self.hparams.model_id, subfolder="scheduler", torch_dtype=torch.float32, use_safetensors=True)
+            self.hparams.model_id, subfolder="scheduler", torch_dtype=torch.float16, use_safetensors=True)
 
     def add_lora(self, unet):
         lora_attn_procs = {}
@@ -175,7 +175,7 @@ class PanoGenerator(PanoBase):
 
     def load_branch(self, add_lora, train_lora, add_cn):
         unet = UNet2DConditionModel.from_pretrained(
-            self.hparams.model_id, subfolder="unet", torch_dtype=torch.float32, use_safetensors=True)
+            self.hparams.model_id, subfolder="unet", torch_dtype=torch.float16, use_safetensors=True)
         unet.enable_xformers_memory_efficient_attention()
         unet.enable_gradient_checkpointing()
 
