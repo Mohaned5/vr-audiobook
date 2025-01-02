@@ -22,7 +22,6 @@ class PanFusion(PanoGenerator):
                 "r": 16,
                 "lora_alpha": 32,
                 "lora_dropout": 0.1,
-                "task_type": "CAUSAL_LM",
                 "target_modules": [
                     "attn1.to_q",
                     "attn1.to_k",
