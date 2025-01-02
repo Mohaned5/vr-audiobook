@@ -27,7 +27,9 @@ class PanFusion(PanoGenerator):
         for param in self.mv_base_model.parameters():
             param.data = param.data.to(torch.float16)  # or torch.float16 based on your setup
         for name, buffer in self.mv_base_model.named_buffers():
-            self.mv_base_model.register_buffer(name, buffer.to(torch.float16))  # or torch.float16
+            # Fix buffer names by replacing invalid characters
+            sanitized_name = name.replace('.', '_')
+            self.mv_base_model.register_buffer(sanitized_name, buffer.to(torch.float16))  # or torch.float16
 
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
