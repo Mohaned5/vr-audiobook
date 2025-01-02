@@ -11,6 +11,7 @@ from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
 from lightning.pytorch.strategies import FSDPStrategy
 from models.pano.MVGenModel import MultiViewBaseModel
+from torch.distributed.fsdp.wrap import always_wrap_policy
 
 
 def cli_main():
@@ -42,6 +43,11 @@ def cli_main():
 
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
 
+    def auto_wrap_policy(module, recurse, nonwrapped_numel):
+        if isinstance(module, MultiViewBaseModel):
+            return True
+        return always_wrap_policy(module, recurse, nonwrapped_numel)
+
     class MyLightningCLI(LightningCLI):
         def before_instantiate_classes(self):
             # set result_dir, data and pano_height for evaluation
@@ -62,7 +68,7 @@ def cli_main():
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': FSDPStrategy(auto_wrap_policy={MultiViewBaseModel}),
+            'strategy': FSDPStrategy(auto_wrap_policy=auto_wrap_policy),
             'devices': 4,
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
