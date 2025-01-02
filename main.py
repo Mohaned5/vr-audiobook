@@ -9,8 +9,6 @@ from jsonargparse import lazy_instance
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
-from peft import get_peft_model, LoraConfig
-from transformers import AutoModelForCausalLM
 
 
 def cli_main():
@@ -56,20 +54,6 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
-        # def before_fit(self):
-        #     # Apply PEFT to the PanFusion model before training
-        #     if self.model.hparams.enable_peft:
-        #     # Apply LoRA
-        #         lora_config = LoraConfig(**self.model.hparams.peft_config)
-        #         self.model.instantiate_model()
-        #         self.model.mv_base_model = get_peft_model(
-        #             self.model.mv_base_model,
-        #             lora_config,
-        #         )
-        #         self.model.mv_base_model.print_trainable_parameters()
-
-
-
     cli = MyLightningCLI(
         trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
@@ -86,7 +70,6 @@ def cli_main():
             'callbacks': [checkpoint_callback, lr_monitor],
             'logger': wandb_logger
         })
-    
 
 
 if __name__ == '__main__':
