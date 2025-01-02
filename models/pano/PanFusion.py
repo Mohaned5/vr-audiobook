@@ -7,11 +7,14 @@ from PIL import Image
 from external.Perspective_and_Equirectangular import e2p
 from einops import rearrange
 from lightning.pytorch.utilities import rank_zero_only
+from peft import get_peft_model, LoraConfig
 
 
 class PanFusion(PanoGenerator):
     def __init__(
             self,
+            enable_peft: bool = True,
+            peft_config: dict = None,
             use_pers_prompt: bool = True,
             use_pano_prompt: bool = True,
             copy_pano_prompt: bool = True,
@@ -19,6 +22,8 @@ class PanFusion(PanoGenerator):
             ):
         super().__init__(**kwargs)
         self.save_hyperparameters()
+        self.enable_peft = enable_peft
+        self.peft_config = peft_config
 
     def instantiate_model(self):
         pano_unet, cn = self.load_pano()
@@ -26,6 +31,10 @@ class PanFusion(PanoGenerator):
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
+        if self.enable_peft:
+            lora_config = LoraConfig(**self.peft_config)
+            self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
+            self.mv_base_model.print_trainable_parameters()
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
         cameras = {k: rearrange(v, 'b m ... -> (b m) ...') for k, v in cameras.items()}

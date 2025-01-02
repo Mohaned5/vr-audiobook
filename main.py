@@ -57,17 +57,22 @@ def cli_main():
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
         def before_fit(self):
-            # Apply PEFT to the model before training
-            model_path = self.config.get("model", {}).get("pretrained_model", "facebook/opt-350m")
+            # Apply PEFT to the PanFusion model before training
             lora_config = LoraConfig(
                 r=16,
                 lora_alpha=32,
                 lora_dropout=0.1,
                 task_type="CAUSAL_LM"
             )
-            model = AutoModelForCausalLM.from_pretrained(model_path)
-            self.model = get_peft_model(model, lora_config)
-            self.model.print_trainable_parameters()  # Log trainable parameters
+
+            # Access the PanFusion model instance
+            pano_model = self.model
+            pano_model.instantiate_model()
+
+            # Apply PEFT
+            self.model.mv_base_model = get_peft_model(pano_model.mv_base_model, lora_config)
+            self.model.mv_base_model.print_trainable_parameters()
+
 
 
     cli = MyLightningCLI(
