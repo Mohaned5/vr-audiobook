@@ -65,7 +65,6 @@ def cli_main():
                 self.model.mv_base_model = get_peft_model(
                     self.model.mv_base_model,
                     lora_config,
-                    autocast_adapter_dtype=True,      # Enable memory-efficient data type
                 )
                 self.model.mv_base_model.print_trainable_parameters()
 
