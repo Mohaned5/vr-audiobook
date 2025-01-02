@@ -12,7 +12,13 @@ from datetime import timedelta
 from peft import get_peft_model, LoraConfig
 from transformers import AutoModelForCausalLM
 
-
+def get_target_modules(model, target_names):
+            """Retrieve target modules from the model."""
+            target_modules = []
+            for name, module in model.named_modules():
+                if any(target in name for target in target_names):
+                    target_modules.append((name, module))
+            return target_modules
 def cli_main():
     # remove slurm env vars due to this issue:
     # https://github.com/Lightning-AI/lightning/issues/5225
@@ -43,6 +49,8 @@ def cli_main():
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
 
     class MyLightningCLI(LightningCLI):
+
+
         def before_instantiate_classes(self):
             # set result_dir, data and pano_height for evaluation
             if self.config.get('test', {}).get('model', {}).get('class_path') == 'models.EvalPanoGen':
@@ -60,6 +68,11 @@ def cli_main():
             # Apply PEFT to the PanFusion model before training
             if self.model.hparams.enable_peft:
             # Apply LoRA
+                target_names = self.model.hparams.peft_config['target_modules']
+                target_modules = get_target_modules(self.model.mv_base_model, target_names)
+                print("\nTarget Modules for PEFT:")
+                for name, module in target_modules:
+                    print(f"Module Name: {name}, Module: {module}")
                 lora_config = LoraConfig(**self.model.hparams.peft_config)
                 self.model.instantiate_model()
                 self.model.mv_base_model = get_peft_model(self.model.mv_base_model, lora_config)

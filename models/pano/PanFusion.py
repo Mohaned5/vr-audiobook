@@ -40,9 +40,6 @@ class PanFusion(PanoGenerator):
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
         if self.hparams.enable_peft:
             # Extract individual Linear layers from ModuleList
-            model = AutoModelForCausalLM.from_pretrained("../../logs/4142dlo4/checkpoints/last.ckpt")
-
-            print(model)
             lora_config = LoraConfig(**self.hparams.peft_config)
             self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
             self.mv_base_model.print_trainable_parameters()
