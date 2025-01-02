@@ -55,7 +55,6 @@ def cli_main():
         
 
         def add_arguments_to_parser(self, parser):
-            parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
             parser.add_argument("--model.init_args.enable_peft", type=bool, default=False, help="Enable PEFT")
             parser.add_argument("--model.init_args.peft_config", type=dict, default={}, help="PEFT configuration")
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
