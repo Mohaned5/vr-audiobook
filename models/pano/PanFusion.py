@@ -38,11 +38,11 @@ class PanFusion(PanoGenerator):
         
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
-        # if self.hparams.enable_peft:
-        #     # Extract individual Linear layers from ModuleList
-        #     lora_config = LoraConfig(**self.hparams.peft_config)
-        #     self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
-        #     self.mv_base_model.print_trainable_parameters()
+        if self.hparams.enable_peft:
+            # Extract individual Linear layers from ModuleList
+            lora_config = LoraConfig(**self.hparams.peft_config)
+            self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
+            self.mv_base_model.print_trainable_parameters()
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
         cameras = {k: rearrange(v, 'b m ... -> (b m) ...') for k, v in cameras.items()}
