@@ -62,7 +62,12 @@ def cli_main():
             # Apply LoRA
                 lora_config = LoraConfig(**self.model.hparams.peft_config)
                 self.model.instantiate_model()
-                self.model.mv_base_model = get_peft_model(self.model.mv_base_model, lora_config)
+                self.model.mv_base_model = get_peft_model(
+                    self.model.mv_base_model,
+                    lora_config,
+                    low_cpu_mem_usage=True,     # Enable low memory usage
+                    ephemeral_gpu_offload=True  # Offload to CPU when not in use
+                )
                 self.model.mv_base_model.print_trainable_parameters()
 
 
