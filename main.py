@@ -9,7 +9,8 @@ from jsonargparse import lazy_instance
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
-from peft import PEFTTrainer, PEFTConfig, LoraConfig
+from peft import get_peft_model, LoraConfig
+from transformers import AutoModelForCausalLM
 
 
 def cli_main():
@@ -41,15 +42,6 @@ def cli_main():
 
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
 
-    lora_config = LoraConfig(
-        r=8,
-        lora_alpha=32,
-        target_modules=["q_proj", "v_proj"],
-        lora_dropout=0.1,
-        bias="none"
-    )
-    peft_config = PEFTConfig(lora=lora_config)
-
     class MyLightningCLI(LightningCLI):
         def before_instantiate_classes(self):
             # set result_dir, data and pano_height for evaluation
@@ -64,8 +56,22 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
+        def before_fit(self):
+            # Apply PEFT to the model before training
+            model_path = self.config.get("model", {}).get("pretrained_model", "facebook/opt-350m")
+            lora_config = LoraConfig(
+                r=16,
+                lora_alpha=32,
+                lora_dropout=0.1,
+                task_type="CAUSAL_LM"
+            )
+            model = AutoModelForCausalLM.from_pretrained(model_path)
+            self.model = get_peft_model(model, lora_config)
+            self.model.print_trainable_parameters()  # Log trainable parameters
+
+
     cli = MyLightningCLI(
-        trainer_class=PEFTTrainer,
+        trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
@@ -78,8 +84,7 @@ def cli_main():
             'max_epochs': 10,
             'precision': 16,
             'callbacks': [checkpoint_callback, lr_monitor],
-            'logger': wandb_logger,
-            'peft_config': peft_config,
+            'logger': wandb_logger
         })
 
 
