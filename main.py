@@ -52,11 +52,8 @@ def cli_main():
                 self.config.test.model.init_args.data = self.config.test.data.class_path.split('.')[-1]
                 self.config.test.model.init_args.pano_height = self.config.test.data.init_args.pano_height
                 self.config.test.data.init_args.batch_size = 1
-        
 
         def add_arguments_to_parser(self, parser):
-            parser.add_argument("--model.init_args.enable_peft", type=bool, default=False, help="Enable PEFT")
-            parser.add_argument("--model.init_args.peft_config", type=dict, default={}, help="PEFT configuration")
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
         def before_fit(self):
