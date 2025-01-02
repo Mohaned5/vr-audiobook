@@ -67,7 +67,7 @@ def cli_main():
             'limit_val_batches': 4,
             'benchmark': True,
             'max_epochs': 10,
-            'precision': 16,
+            'precision': '16-mixed',
             'callbacks': [checkpoint_callback, lr_monitor],
             'logger': wandb_logger,
             'accelerator': 'gpu',   
