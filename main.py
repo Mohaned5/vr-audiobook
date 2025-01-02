@@ -67,7 +67,6 @@ def cli_main():
                     lora_config,
                     autocast_adapter_dtype=True,      # Enable memory-efficient data type
                     low_cpu_mem_usage=True,           # Reduce memory during initialization
-                    ephemeral_gpu_offload=True 
                 )
                 self.model.mv_base_model.print_trainable_parameters()
 
