@@ -23,7 +23,16 @@ class PanFusion(PanoGenerator):
                 "lora_alpha": 32,
                 "lora_dropout": 0.1,
                 "task_type": "CAUSAL_LM",
-                "target_modules" : ["to_q", "to_k", "to_v", "to_out"],            
+                "target_modules": [
+                    "attn1.to_q",
+                    "attn1.to_k",
+                    "attn1.to_v",
+                    "attn1.to_out.0",
+                    "attn2.to_q",
+                    "attn2.to_k",
+                    "attn2.to_v",
+                    "attn2.to_out.0",
+                ],         
                 },
             **kwargs
             ):
@@ -35,9 +44,7 @@ class PanFusion(PanoGenerator):
         pano_unet, cn = self.load_pano()
         unet, pers_cn = self.load_pers()
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
-        print("Inspecting model structure:")
-        for name, module in self.mv_base_model.named_modules():
-            print(f"Module: {name} -> {module.__class__.__name__}")
+
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
         if self.hparams.enable_peft:
