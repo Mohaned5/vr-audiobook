@@ -60,7 +60,7 @@ def cli_main():
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': 'deepspeed_stage_3_offload',
+            'strategy': 'fsdp',
             'devices': 4,
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
