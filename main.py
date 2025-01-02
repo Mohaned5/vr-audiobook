@@ -9,6 +9,7 @@ from jsonargparse import lazy_instance
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
+from peft import PEFTTrainer, PEFTConfig, LoraConfig
 
 
 def cli_main():
@@ -40,6 +41,15 @@ def cli_main():
 
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
 
+    lora_config = LoraConfig(
+        r=8,
+        lora_alpha=32,
+        target_modules=["q_proj", "v_proj"],
+        lora_dropout=0.1,
+        bias="none"
+    )
+    peft_config = PEFTConfig(lora=lora_config)
+
     class MyLightningCLI(LightningCLI):
         def before_instantiate_classes(self):
             # set result_dir, data and pano_height for evaluation
@@ -55,7 +65,7 @@ def cli_main():
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
     cli = MyLightningCLI(
-        trainer_class=Trainer,
+        trainer_class=PEFTTrainer,
         save_config_kwargs={'overwrite': True},
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
@@ -68,7 +78,8 @@ def cli_main():
             'max_epochs': 10,
             'precision': 16,
             'callbacks': [checkpoint_callback, lr_monitor],
-            'logger': wandb_logger
+            'logger': wandb_logger,
+            'peft_config': peft_config,
         })
 
 
