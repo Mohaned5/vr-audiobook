@@ -22,8 +22,8 @@ class PanFusion(PanoGenerator):
                 "lora_alpha": 32,
                 "lora_dropout": 0.1,
                 "task_type": "CAUSAL_LM",
-                "target_modules": ["conv_in", "conv_out", "down_blocks", "up_blocks"]  # Adjust these names for your model
-            },
+                "target_modules" : ["to_q", "to_k", "to_v", "to_out"],            
+                },
             **kwargs
             ):
         super().__init__(**kwargs)
@@ -34,9 +34,7 @@ class PanFusion(PanoGenerator):
         pano_unet, cn = self.load_pano()
         unet, pers_cn = self.load_pers()
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
-        print("Named modules in mv_base_model:")
-        for name, module in self.mv_base_model.named_modules():
-            print(name, type(module))
+        
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
         if self.hparams.enable_peft:
