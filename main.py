@@ -65,7 +65,7 @@ def cli_main():
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
     cli = MyLightningCLI(
-        trainer_class=PEFTTrainer,
+        trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
@@ -79,7 +79,6 @@ def cli_main():
             'precision': 16,
             'callbacks': [checkpoint_callback, lr_monitor],
             'logger': wandb_logger,
-            'peft_config': peft_config,
         })
 
 
