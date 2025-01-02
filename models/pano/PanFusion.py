@@ -41,10 +41,12 @@ class PanFusion(PanoGenerator):
             # Extract individual Linear layers from ModuleList
             target_modules = []
             for name, module in self.mv_base_model.named_modules():
-                if isinstance(module, torch.nn.Linear):
+                if isinstance(module, torch.nn.Linear) and any(
+                    keyword in name for keyword in ["to_q", "to_k", "to_v", "to_out"]
+                ):
                     target_modules.append(name)
 
-            print(f"LoRA target modules: {target_modules}")  # Debugging
+            print(f"Filtered LoRA target modules: {target_modules}")
             lora_config = LoraConfig(**self.hparams.peft_config)
             self.mv_base_model = get_peft_model(self.mv_base_model, lora_config)
             self.mv_base_model.print_trainable_parameters()
