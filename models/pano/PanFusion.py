@@ -35,7 +35,9 @@ class PanFusion(PanoGenerator):
         pano_unet, cn = self.load_pano()
         unet, pers_cn = self.load_pers()
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
-        
+        print("Inspecting model structure:")
+        for name, module in self.mv_base_model.named_modules():
+            print(f"Module: {name} -> {module.__class__.__name__}")
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)
         if self.hparams.enable_peft:
