@@ -13,6 +13,7 @@ from peft import get_peft_model, LoraConfig
 class PanFusion(PanoGenerator):
     def __init__(
             self,
+            enable_peft: bool = True,  # Default value
             use_pers_prompt: bool = True,
             use_pano_prompt: bool = True,
             copy_pano_prompt: bool = True,
@@ -20,7 +21,7 @@ class PanFusion(PanoGenerator):
             ):
         super().__init__(**kwargs)
         self.save_hyperparameters()
-        self.enable_peft = True
+        self.enable_peft = enable_peft
         self.peft_config = {
             "r": 16,
             "lora_alpha": 32,

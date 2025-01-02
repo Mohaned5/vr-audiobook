@@ -45,6 +45,8 @@ def cli_main():
     class MyLightningCLI(LightningCLI):
         def before_instantiate_classes(self):
             # set result_dir, data and pano_height for evaluation
+            if self.config.model.class_path == "models.PanFusion":
+                self.config.model.init_args.enable_peft = True
             if self.config.get('test', {}).get('model', {}).get('class_path') == 'models.EvalPanoGen':
                 if self.config.test.data.init_args.result_dir is None:
                     result_dir = os.path.join(exp_dir, 'test')
