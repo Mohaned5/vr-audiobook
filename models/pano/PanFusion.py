@@ -24,6 +24,7 @@ class PanFusion(PanoGenerator):
         pano_unet, cn = self.load_pano()
         unet, pers_cn = self.load_pers()
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
+        self.mv_base_model
         for param in self.mv_base_model.parameters():
             param.data = param.data.to(torch.float16)  # or torch.float16 based on your setup
         for name, buffer in self.mv_base_model.named_buffers():

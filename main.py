@@ -9,6 +9,8 @@ from jsonargparse import lazy_instance
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
+from lightning.pytorch.strategies import FSDPStrategy
+from models.pano.MVGenModel import MultiViewBaseModel
 
 
 def cli_main():
@@ -60,7 +62,7 @@ def cli_main():
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': 'fsdp',
+            'strategy': FSDPStrategy(auto_wrap_policy={MultiViewBaseModel}),
             'devices': 4,
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
