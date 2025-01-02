@@ -31,8 +31,7 @@ class PanFusion(PanoGenerator):
                     "attn2.to_k",
                     "attn2.to_v",
                     "attn2.to_out.0",
-                ], 
-                "autocast_adapter_dtype" : True        
+                ]
                 },
             **kwargs
             ):

@@ -65,8 +65,9 @@ def cli_main():
                 self.model.mv_base_model = get_peft_model(
                     self.model.mv_base_model,
                     lora_config,
-                    low_cpu_mem_usage=True,     # Enable low memory usage
-                    ephemeral_gpu_offload=True  # Offload to CPU when not in use
+                    autocast_adapter_dtype=True,      # Enable memory-efficient data type
+                    low_cpu_mem_usage=True,           # Reduce memory during initialization
+                    ephemeral_gpu_offload=True 
                 )
                 self.model.mv_base_model.print_trainable_parameters()
 
