@@ -58,20 +58,12 @@ def cli_main():
 
         def before_fit(self):
             # Apply PEFT to the PanFusion model before training
-            lora_config = LoraConfig(
-                r=16,
-                lora_alpha=32,
-                lora_dropout=0.1,
-                task_type="CAUSAL_LM"
-            )
-
-            # Access the PanFusion model instance
-            pano_model = self.model
-            pano_model.instantiate_model()
-
-            # Apply PEFT
-            self.model.mv_base_model = get_peft_model(pano_model.mv_base_model, lora_config)
-            self.model.mv_base_model.print_trainable_parameters()
+            if self.model.hparams.enable_peft:
+            # Apply LoRA
+                lora_config = LoraConfig(**self.model.hparams.peft_config)
+                self.model.instantiate_model()
+                self.model.mv_base_model = get_peft_model(self.model.mv_base_model, lora_config)
+                self.model.mv_base_model.print_trainable_parameters()
 
 
 
