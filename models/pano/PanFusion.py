@@ -13,11 +13,6 @@ from utils.fsdpstrategy import CustomFSDPStrategy
 from torch.distributed.fsdp import MixedPrecision
 from torch.distributed.fsdp.wrap import always_wrap_policy
 
-mixed_precision_config = MixedPrecision(
-    param_dtype=torch.float16,  # Use FP16 for parameters
-    reduce_dtype=torch.float16,  # Use FP16 for gradients
-    buffer_dtype=torch.float16   # Use FP16 for buffers
-)
 
 class PanFusion(PanoGenerator):
     def __init__(
@@ -39,8 +34,8 @@ class PanFusion(PanoGenerator):
                 buffer_dtype=torch.float32   # Buffers in FP16
             )
             base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
-            for param in base_model.parameters():
-                param.data = param.data.to(torch.float32)  # or torch.float16 based on your setup
+            # for param in base_model.parameters():
+            #     param.data = param.data.to(torch.float32)  # or torch.float16 based on your setup
             self.mv_base_model = wrap(base_model, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
          
             # for name, buffer in self.mv_base_model.named_buffers():
