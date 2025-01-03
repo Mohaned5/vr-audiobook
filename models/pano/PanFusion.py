@@ -36,9 +36,14 @@ class PanFusion(PanoGenerator):
             mixed_precision_config = MixedPrecision(
                 param_dtype=torch.float16,  # Parameters in FP16
                 reduce_dtype=torch.float16,  # Gradients in FP16
-                buffer_dtype=torch.float16   # Buffers in FP16
+                buffer_dtype=torch.float32   # Buffers in FP16
             )
             self.mv_base_model = wrap(MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad), auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
+            for name, param in self.mv_base_model.named_parameters():
+                print(f"Parameter {name} dtype: {param.dtype}")
+            for name, buffer in self.mv_base_model.named_buffers():
+                print(f"Buffer {name} dtype: {buffer.dtype}")
+
             # for param in self.mv_base_model.parameters():
             #     param.data = param.data.to(torch.float16)  # or torch.float16 based on your setup
             # for name, buffer in self.mv_base_model.named_buffers():

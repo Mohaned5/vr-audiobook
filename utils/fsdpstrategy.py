@@ -7,7 +7,7 @@ import torch
 mixed_precision_config = MixedPrecision(
     param_dtype=torch.float16,  # Use FP16 for parameters
     reduce_dtype=torch.float16,  # Use FP16 for gradients
-    buffer_dtype=torch.float16   # Use FP16 for buffers
+    buffer_dtype=torch.float32   # Use FP16 for buffers
 )
 
 class CustomFSDPStrategy(FSDPStrategy):
