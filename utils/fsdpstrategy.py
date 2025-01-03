@@ -2,6 +2,7 @@ from lightning.pytorch.strategies import FSDPStrategy
 import torch.nn as nn
 from torch.distributed.fsdp import MixedPrecision
 from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
+import torch
 
 mixed_precision_config = MixedPrecision(
     param_dtype=torch.float16,  # Use FP16 for parameters
