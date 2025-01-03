@@ -10,7 +10,7 @@ from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
 from lightning.pytorch.strategies import FSDPStrategy
-
+from utils.fsdpstrategy import CustomFSDPStrategy
 
 def cli_main():
     # remove slurm env vars due to this issue:
@@ -75,7 +75,12 @@ def cli_main():
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': fsdp_strategy,
+            'strategy': {
+                'class_path': 'fsdp_strategy.CustomFSDPStrategy',  # Update with the correct module path
+                'init_args': {
+                    'sharding_strategy': 'FULL_SHARD',
+                }
+            },
             'devices': 4,
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
