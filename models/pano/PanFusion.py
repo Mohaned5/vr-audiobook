@@ -7,6 +7,9 @@ from PIL import Image
 from external.Perspective_and_Equirectangular import e2p
 from einops import rearrange
 from lightning.pytorch.utilities import rank_zero_only
+from lightning.pytorch.strategies import FSDPStrategy
+from torch.distributed.fsdp.wrap import wrap
+from utils.fsdpstrategy import CustomFSDPStrategy
 
 
 class PanFusion(PanoGenerator):
@@ -21,18 +24,18 @@ class PanFusion(PanoGenerator):
         self.save_hyperparameters()
 
     def instantiate_model(self):
-        pano_unet, cn = self.load_pano()
-        unet, pers_cn = self.load_pers()
-        self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
-        # for param in self.mv_base_model.parameters():
-        #     param.data = param.data.to(torch.float16)  # or torch.float16 based on your setup
-        # for name, buffer in self.mv_base_model.named_buffers():
-        #     # Fix buffer names by replacing invalid characters
-        #     sanitized_name = name.replace('.', '_')
-        #     self.mv_base_model.register_buffer(sanitized_name, buffer.to(torch.float16))  # or torch.float16
+            pano_unet, cn = self.load_pano()
+            unet, pers_cn = self.load_pers()
+            self.mv_base_model = wrap(MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad))
+            # for param in self.mv_base_model.parameters():
+            #     param.data = param.data.to(torch.float16)  # or torch.float16 based on your setup
+            # for name, buffer in self.mv_base_model.named_buffers():
+            #     # Fix buffer names by replacing invalid characters
+            #     sanitized_name = name.replace('.', '_')
+            #     self.mv_base_model.register_buffer(sanitized_name, buffer.to(torch.float16))  # or torch.float16
 
-        if not self.hparams.layout_cond:
-            self.trainable_params.extend(self.mv_base_model.trainable_parameters)
+            if not self.hparams.layout_cond:
+                self.trainable_params.extend(self.mv_base_model.trainable_parameters)
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
         cameras = {k: rearrange(v, 'b m ... -> (b m) ...') for k, v in cameras.items()}
