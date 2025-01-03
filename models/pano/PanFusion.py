@@ -24,9 +24,6 @@ class PanFusion(PanoGenerator):
         self.save_hyperparameters()
 
     def instantiate_model(self):
-        fsdp_strategy = CustomFSDPStrategy()  # Instantiate your custom strategy
-        with fsdp_strategy.model_sharded_context():
-
             pano_unet, cn = self.load_pano()
             unet, pers_cn = self.load_pers()
             self.mv_base_model = wrap(MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad))
