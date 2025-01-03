@@ -76,7 +76,9 @@ def cli_main():
             'precision': 16,
             'callbacks': [checkpoint_callback, lr_monitor],
             'logger': wandb_logger
-        })
+        },
+        subclass_mode_model=True,  # Allow model subclasses
+        subclass_mode_data=False)
 
 
 if __name__ == '__main__':
