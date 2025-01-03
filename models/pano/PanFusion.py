@@ -7,7 +7,6 @@ from PIL import Image
 from external.Perspective_and_Equirectangular import e2p
 from einops import rearrange
 from lightning.pytorch.utilities import rank_zero_only
-from lightning.pytorch.strategies import FSDPStrategy
 
 
 class PanFusion(PanoGenerator):
