@@ -9,6 +9,7 @@ from einops import rearrange
 from lightning.pytorch.utilities import rank_zero_only
 from lightning.pytorch.strategies import FSDPStrategy
 from torch.distributed.fsdp.wrap import wrap
+from utils.fsdpstrategy import CustomFSDPStrategy
 
 
 class PanFusion(PanoGenerator):
@@ -23,7 +24,8 @@ class PanFusion(PanoGenerator):
         self.save_hyperparameters()
 
     def instantiate_model(self):
-        with FSDPStrategy.model_sharded_context():
+        fsdp_strategy = CustomFSDPStrategy()  # Instantiate your custom strategy
+        with fsdp_strategy.model_sharded_context():
 
             pano_unet, cn = self.load_pano()
             unet, pers_cn = self.load_pers()
