@@ -24,13 +24,13 @@ class PanFusion(PanoGenerator):
         pano_unet, cn = self.load_pano()
         unet, pers_cn = self.load_pers()
         self.mv_base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
-        self.mv_base_model
-        for param in self.mv_base_model.parameters():
-            param.data = param.data.to(torch.float16)  # or torch.float16 based on your setup
-        for name, buffer in self.mv_base_model.named_buffers():
-            # Fix buffer names by replacing invalid characters
-            sanitized_name = name.replace('.', '_')
-            self.mv_base_model.register_buffer(sanitized_name, buffer.to(torch.float16))  # or torch.float16
+        self.register_module('mv_base_model', self.mv_base_model)
+        # for param in self.mv_base_model.parameters():
+        #     param.data = param.data.to(torch.float16)  # or torch.float16 based on your setup
+        # for name, buffer in self.mv_base_model.named_buffers():
+        #     # Fix buffer names by replacing invalid characters
+        #     sanitized_name = name.replace('.', '_')
+        #     self.mv_base_model.register_buffer(sanitized_name, buffer.to(torch.float16))  # or torch.float16
 
         if not self.hparams.layout_cond:
             self.trainable_params.extend(self.mv_base_model.trainable_parameters)

@@ -11,6 +11,7 @@ from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
 from lightning.pytorch.strategies import FSDPStrategy
 from utils.fsdpstrategy import CustomFSDPStrategy
+from torch import nn
 
 def cli_main():
     # remove slurm env vars due to this issue:
@@ -79,6 +80,9 @@ def cli_main():
                 'class_path': 'utils.fsdpstrategy.CustomFSDPStrategy',  # Update with the correct module path
                 'init_args': {
                     'sharding_strategy': 'FULL_SHARD',
+                    "activation_checkpointing_policy":{nn.TransformerEncoderLayer, nn.TransformerDecoderLayer},
+                "cpu_offload":True,
+                    
                 }
             },
             'devices': 3,
