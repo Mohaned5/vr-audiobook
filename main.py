@@ -9,9 +9,7 @@ from jsonargparse import lazy_instance
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
-from lightning.pytorch.strategies import FSDPStrategy
-from utils.fsdpstrategy import CustomFSDPStrategy
-from torch import nn
+
 
 def cli_main():
     # remove slurm env vars due to this issue:
@@ -56,36 +54,13 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
-
     cli = MyLightningCLI(
         trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': {
-                'class_path': 'utils.fsdpstrategy.CustomFSDPStrategy',  # Ensure this path is correct
-                'init_args': {
-                    'sharding_strategy': 'FULL_SHARD',
-                    "activation_checkpointing_policy": [
-                        "torch.nn.modules.transformer.TransformerEncoderLayer",
-                        "torch.nn.modules.transformer.TransformerDecoderLayer"
-                    ],
-                    "cpu_offload": True,
-                    "target_modules": [
-                        "attn1.to_q",
-                        "attn1.to_k",
-                        "attn1.to_v",
-                        "attn1.to_out.0",
-                        "attn2.to_q",
-                        "attn2.to_k",
-                        "attn2.to_v",
-                        "attn2.to_out.0",
-                    ]
-                }
-            },
-
-            'devices': 3,
+            'strategy': 'ddp',
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
@@ -93,8 +68,7 @@ def cli_main():
             'max_epochs': 10,
             'precision': 16,
             'callbacks': [checkpoint_callback, lr_monitor],
-            'logger': wandb_logger,
-            'accelerator': 'gpu',   
+            'logger': wandb_logger
         })
 
 
