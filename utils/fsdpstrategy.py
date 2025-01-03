@@ -15,7 +15,7 @@ class CustomFSDPStrategy(FSDPStrategy):
         super().__init__(
             auto_wrap_policy={nn.Linear, nn.Conv2d},
             sharding_strategy="FULL_SHARD",
-            # mixed_precision=mixed_precision_config,  # Use the configured object
+            mixed_precision=mixed_precision_config,  # Use the configured object
             activation_checkpointing_policy={nn.TransformerEncoderLayer},
             cpu_offload=False,
             **kwargs
