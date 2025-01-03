@@ -10,7 +10,7 @@ from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
 from lightning.pytorch.strategies import FSDPStrategy
-
+from utils.fsdpstrategy import CustomFSDPStrategy
 
 def cli_main():
     # remove slurm env vars due to this issue:
@@ -61,13 +61,7 @@ def cli_main():
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': FSDPStrategy(
-                auto_wrap_policy={torch.nn.Linear, torch.nn.Conv2d},  # Example layer classes
-                sharding_strategy="FULL_SHARD",  # Default, adjust as needed
-                mixed_precision=True,  # Enable mixed precision for memory savings
-                activation_checkpointing_policy={torch.nn.TransformerEncoderLayer},  # Example for activation checkpointing
-                cpu_offload=False  # Set True only if GPU memory is still insufficient
-            ),
+            'strategy': "utils.fsdpstrategy.CustomFSDPStrategy",
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
@@ -76,9 +70,7 @@ def cli_main():
             'precision': 16,
             'callbacks': [checkpoint_callback, lr_monitor],
             'logger': wandb_logger
-        },
-        subclass_mode_model=True,  # Allow model subclasses
-        subclass_mode_data=False)
+        })
 
 
 if __name__ == '__main__':
