@@ -76,7 +76,7 @@ def cli_main():
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
             'strategy': {
-                'class_path': 'fsdp_strategy.CustomFSDPStrategy',  # Update with the correct module path
+                'class_path': 'utils.fsdpstrategy.CustomFSDPStrategy',  # Update with the correct module path
                 'init_args': {
                     'sharding_strategy': 'FULL_SHARD',
                 }
