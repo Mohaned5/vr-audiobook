@@ -42,11 +42,6 @@ class PanFusion(PanoGenerator):
             for param in base_model.parameters():
                 param.data = param.data.to(torch.float16)  # or torch.float16 based on your setup
             self.mv_base_model = wrap(base_model, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
-            for name, param in self.mv_base_model.named_parameters():
-                print(f"Parameter {name} dtype: {param.dtype}")
-            for name, buffer in self.mv_base_model.named_buffers():
-                print(f"Buffer {name} dtype: {buffer.dtype}")
-
          
             # for name, buffer in self.mv_base_model.named_buffers():
             #     # Fix buffer names by replacing invalid characters
