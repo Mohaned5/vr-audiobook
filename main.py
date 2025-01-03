@@ -56,19 +56,6 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
-    def get_auto_wrap_policy():
-        # Example: Wrap Transformer layers
-        policy = lambda module, recurse, **kwargs: isinstance(module, (nn.TransformerEncoderLayer, nn.TransformerDecoderLayer))
-        return policy
-
-    # Initialize FSDPStrategy with auto-wrap policy
-    fsdp_strategy = FSDPStrategy(
-        auto_wrap_policy=get_auto_wrap_policy(),
-        sharding_strategy="FULL_SHARD",  # You can adjust this based on your needs
-        # Optionally, enable activation checkpointing or CPU offload
-        # activation_checkpointing_policy={nn.TransformerEncoderLayer, nn.TransformerDecoderLayer},
-        # cpu_offload=True,
-    )
 
     cli = MyLightningCLI(
         trainer_class=Trainer,
@@ -85,8 +72,19 @@ def cli_main():
                         "torch.nn.modules.transformer.TransformerDecoderLayer"
                     ],
                     "cpu_offload": True,
+                    "target_modules": [
+                        "attn1.to_q",
+                        "attn1.to_k",
+                        "attn1.to_v",
+                        "attn1.to_out.0",
+                        "attn2.to_q",
+                        "attn2.to_k",
+                        "attn2.to_v",
+                        "attn2.to_out.0",
+                    ]
                 }
             },
+
             'devices': 3,
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
