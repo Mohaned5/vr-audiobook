@@ -10,7 +10,6 @@ from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.trainer import Trainer
 from datetime import timedelta
 from lightning.pytorch.strategies import FSDPStrategy
-from models.pano.MVGenModel import MultiViewBaseModel
 
 
 def cli_main():
@@ -42,7 +41,6 @@ def cli_main():
 
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
 
-    
     class MyLightningCLI(LightningCLI):
         def before_instantiate_classes(self):
             # set result_dir, data and pano_height for evaluation
@@ -57,13 +55,27 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
+    def get_auto_wrap_policy():
+        # Example: Wrap Transformer layers
+        policy = lambda module, recurse, **kwargs: isinstance(module, (nn.TransformerEncoderLayer, nn.TransformerDecoderLayer))
+        return policy
+
+    # Initialize FSDPStrategy with auto-wrap policy
+    fsdp_strategy = FSDPStrategy(
+        auto_wrap_policy=get_auto_wrap_policy(),
+        sharding_strategy="FULL_SHARD",  # You can adjust this based on your needs
+        # Optionally, enable activation checkpointing or CPU offload
+        # activation_checkpointing_policy={nn.TransformerEncoderLayer, nn.TransformerDecoderLayer},
+        # cpu_offload=True,
+    )
+
     cli = MyLightningCLI(
         trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': FSDPStrategy(),
+            'strategy': fsdp_strategy,
             'devices': 4,
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
