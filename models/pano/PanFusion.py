@@ -44,7 +44,7 @@ class PanFusion(PanoGenerator):
             #     self.mv_base_model.register_buffer(sanitized_name, buffer.to(torch.float16))  # or torch.float16
 
             if not self.hparams.layout_cond:
-                self.trainable_params.extend(self.mv_base_model.trainable_parameters)
+                self.trainable_params.extend(self.mv_base_model.parameters())
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
         cameras = {k: rearrange(v, 'b m ... -> (b m) ...') for k, v in cameras.items()}
