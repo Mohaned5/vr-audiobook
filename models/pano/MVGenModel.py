@@ -12,26 +12,26 @@ class MultiViewBaseModel(nn.Module):
 
         self.unet = wrap(self.unet)
 
-        self.pano_unet = wrap(self.pano_unet)
-        self.pers_cn = wrap(pers_cn)
-        self.pano_cn = wrap(pano_cn)
+        self.pano_unet = pano_unet
+        self.pers_cn = pers_cn
+        self.pano_cn = pano_cn
         self.pano_pad = pano_pad
 
         if self.unet is not None:
             self.cp_blocks_encoder = nn.ModuleList()
             for downsample_block in self.unet.down_blocks:
                 if downsample_block.downsamplers is not None:
-                    self.cp_blocks_encoder.append(wrap(WarpAttn(
-                        downsample_block.downsamplers[-1].out_channels)))
+                    self.cp_blocks_encoder.append(WarpAttn(
+                        downsample_block.downsamplers[-1].out_channels))
 
-            self.cp_blocks_mid = wrap(WarpAttn(
-                self.unet.mid_block.resnets[-1].out_channels))
+            self.cp_blocks_mid = WarpAttn(
+                self.unet.mid_block.resnets[-1].out_channels)
 
             self.cp_blocks_decoder = nn.ModuleList()
             for upsample_block in self.unet.up_blocks:
                 if upsample_block.upsamplers is not None:
-                    self.cp_blocks_decoder.append(wrap(WarpAttn(
-                        upsample_block.upsamplers[0].channels)))
+                    self.cp_blocks_decoder.append(WarpAttn(
+                        upsample_block.upsamplers[0].channels))
 
             self.trainable_parameters = [(list(self.cp_blocks_mid.parameters()) + \
                 list(self.cp_blocks_decoder.parameters()) + \
