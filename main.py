@@ -55,13 +55,18 @@ def cli_main():
         def add_arguments_to_parser(self, parser):
             parser.link_arguments("model.init_args.cam_sampler", "data.init_args.cam_sampler")
 
+    stategy = CustomFSDPStrategy(
+        auto_wrap_policy={torch.nn.Linear, torch.nn.Conv2d},  # Replace with actual layer types
+        sharding_strategy="FULL_SHARD",
+        mixed_precision=True
+    ),
     cli = MyLightningCLI(
         trainer_class=Trainer,
         save_config_kwargs={'overwrite': True},
         parser_kwargs={'parser_mode': 'omegaconf', 'default_env': True},
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
-            'strategy': "utils.fsdpstrategy.CustomFSDPStrategy",
+            'strategy': stategy,
             'log_every_n_steps': 10,
             'num_sanity_val_steps': 0,
             'limit_val_batches': 4,
