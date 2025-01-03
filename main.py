@@ -77,12 +77,14 @@ def cli_main():
         seed_everything_default=os.environ.get("LOCAL_RANK", 0),
         trainer_defaults={
             'strategy': {
-                'class_path': 'utils.fsdpstrategy.CustomFSDPStrategy',  # Update with the correct module path
+                'class_path': 'utils.fsdpstrategy.CustomFSDPStrategy',  # Ensure this path is correct
                 'init_args': {
                     'sharding_strategy': 'FULL_SHARD',
-                    "activation_checkpointing_policy":{nn.TransformerEncoderLayer, nn.TransformerDecoderLayer},
-                "cpu_offload":True,
-                    
+                    "activation_checkpointing_policy": [
+                        "torch.nn.modules.transformer.TransformerEncoderLayer",
+                        "torch.nn.modules.transformer.TransformerDecoderLayer"
+                    ],
+                    "cpu_offload": True,
                 }
             },
             'devices': 3,
