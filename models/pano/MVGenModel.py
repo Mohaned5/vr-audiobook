@@ -53,14 +53,24 @@ class MultiViewBaseModel(nn.Module):
             # ]
 
     def trainable_parameters(self):
-    # Combine parameters with their corresponding learning rate scales
-        return [
+        seen_params = set()
+        parameter_groups = [
             (self.unet.parameters(), 1.0),
             (self.pano_unet.parameters(), 1.0),
             (self.cp_blocks_mid.parameters(), 0.1),
             (self.cp_blocks_decoder.parameters(), 0.1),
             (self.cp_blocks_encoder.parameters(), 0.1),
         ]
+
+        # Filter duplicates
+        unique_groups = []
+        for params, lr_scale in parameter_groups:
+            unique_params = [p for p in params if p not in seen_params]
+            seen_params.update(unique_params)
+            if unique_params:
+                unique_groups.append((unique_params, lr_scale))
+
+        return unique_groups
 
 
     def forward(self, latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,
