@@ -20,7 +20,7 @@ class MultiViewBaseModel(nn.Module):
 
         # Wrap unet with FSDP
         self.unet = wrap(unet, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
-        self.pano_unet = pano_unet
+        self.pano_unet = wrap(pano_unet, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
         self.pers_cn = pers_cn
         self.pano_cn = pano_cn
         self.pano_pad = pano_pad
