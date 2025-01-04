@@ -37,8 +37,7 @@ class PanFusion(PanoGenerator):
             for param in base_model.parameters():
                 param.data = param.data.to(torch.float32)  # or torch.float16 based on your setup
             
-            if not hasattr(self, 'trainable_params'):
-                self.trainable_params = []
+            
             self.mv_base_model = wrap(base_model, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
             # for name, param in self.mv_base_model.named_parameters():
             #     is_in_trainable = any(param in group[0] for group in self.trainable_params)
@@ -46,7 +45,24 @@ class PanFusion(PanoGenerator):
             #         print(f"Parameter: {name}, Requires Grad: {param.requires_grad}, In trainable_params: {is_in_trainable}")
 
             if not self.hparams.layout_cond:
-                self.trainable_params.extend(self.mv_base_model.trainable_parameters)
+            # Get trainable parameters from base model components
+                trainable_params = []
+                
+                # Add UNet parameters
+                unet_params = [p for p in self.mv_base_model.unet.parameters() if p.requires_grad]
+                if unet_params:
+                    trainable_params.append((unet_params, 1.0))
+                
+                # Add Pano UNet parameters
+                pano_unet_params = [p for p in self.mv_base_model.pano_unet.parameters() if p.requires_grad]
+                if pano_unet_params:
+                    trainable_params.append((pano_unet_params, 1.0))
+                
+                # Add cross-attention block parameters
+                if hasattr(self.mv_base_model, 'trainable_parameters'):
+                    trainable_params.extend(self.mv_base_model.trainable_parameters)
+                
+                self.trainable_params.extend(trainable_params)
             
             self._verify_parameters()
     

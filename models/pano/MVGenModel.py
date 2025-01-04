@@ -30,13 +30,10 @@ class MultiViewBaseModel(nn.Module):
                 if upsample_block.upsamplers is not None:
                     self.cp_blocks_decoder.append(WarpAttn(
                         upsample_block.upsamplers[0].channels))
-            
-            self.trainable_parameters = [
-                (list(self.cp_blocks_mid.parameters()), 1.0),
-                (list(self.cp_blocks_decoder.parameters()), 1.0),
-                (list(self.cp_blocks_encoder.parameters()), 1.0)
-            ]
 
+            self.trainable_parameters = [(list(self.cp_blocks_mid.parameters()) + \
+                list(self.cp_blocks_decoder.parameters()) + \
+                list(self.cp_blocks_encoder.parameters()), 1.0)]
 
     def forward(self, latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,
                 pers_layout_cond=None, pano_layout_cond=None):
