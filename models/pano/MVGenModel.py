@@ -22,8 +22,8 @@ class MultiViewBaseModel(nn.Module):
         # Wrap unet with FSDP
         self.unet = wrap(unet, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
         self.pano_unet = wrap(pano_unet, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
-        print(f"Unet trainable params: {list(self.unet.parameters())}")
-        print(f"Pano_Unet trainable params: {list(self.pano_unet.parameters())}")
+        # print(f"Unet trainable params: {list(self.unet.parameters())}")
+        # print(f"Pano_Unet trainable params: {list(self.pano_unet.parameters())}")
 
         self.pers_cn = pers_cn
         self.pano_cn = pano_cn

@@ -50,6 +50,8 @@ class PanFusion(PanoGenerator):
 
             if not self.hparams.layout_cond:
                 self.trainable_params.extend(list(self.mv_base_model.trainable_parameters()))
+                print(self.trainable_params)
+
 
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
