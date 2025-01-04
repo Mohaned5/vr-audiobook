@@ -41,15 +41,42 @@ class MultiViewBaseModel(nn.Module):
                     self.cp_blocks_decoder.append(WarpAttn(
                         upsample_block.upsamplers[0].channels))
 
+                        # Use a set to track seen parameters
+            seen_params = set()
+
+            # Collect trainable parameters, starting with the primary groups
             self.trainable_parameters = [
-                (list(self.cp_blocks_mid.parameters()) +
-                 list(self.cp_blocks_decoder.parameters()) +
-                 list(self.cp_blocks_encoder.parameters()) +
-                 list(self.unet.parameters()), 1.0)
+                (
+                    [
+                        p for p in (
+                            list(self.cp_blocks_mid.parameters()) +
+                            list(self.cp_blocks_decoder.parameters()) +
+                            list(self.cp_blocks_encoder.parameters()) +
+                            list(self.unet.parameters())
+                        )
+                        if id(p) not in seen_params  # Exclude duplicates
+                    ],
+                    1.0
+                )
             ]
 
-            self.trainable_parameters.append((list(self.unet.parameters()), 1.0))
-            self.trainable_parameters.append((list(self.pano_unet.parameters()), 1.0))
+            # Update the set of seen parameters
+            seen_params.update(id(p) for p in self.trainable_parameters[0][0])
+
+            # Append unique parameters from unet
+            self.trainable_parameters.append((
+                [p for p in self.unet.parameters() if id(p) not in seen_params],
+                1.0
+            ))
+            seen_params.update(id(p) for p in self.trainable_parameters[-1][0])
+
+            # Append unique parameters from pano_unet
+            self.trainable_parameters.append((
+                [p for p in self.pano_unet.parameters() if id(p) not in seen_params],
+                1.0
+            ))
+            seen_params.update(id(p) for p in self.trainable_parameters[-1][0])
+
 
             for name, param in self.named_parameters():
                 is_in_trainable = any(id(param) == id(p) for group in self.trainable_parameters for p in group[0])
