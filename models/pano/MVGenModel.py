@@ -53,14 +53,15 @@ class MultiViewBaseModel(nn.Module):
             # ]
 
     def trainable_parameters(self):
-        # Combine parameters from all components
-        return chain(
-            self.unet.parameters(),
-            self.pano_unet.parameters(),
-            self.cp_blocks_mid.parameters(),
-            self.cp_blocks_decoder.parameters(),
-            self.cp_blocks_encoder.parameters(),
-        )
+    # Combine parameters with their corresponding learning rate scales
+        return [
+            (self.unet.parameters(), 1.0),
+            (self.pano_unet.parameters(), 1.0),
+            (self.cp_blocks_mid.parameters(), 0.1),
+            (self.cp_blocks_decoder.parameters(), 0.1),
+            (self.cp_blocks_encoder.parameters(), 0.1),
+        ]
+
 
     def forward(self, latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,
                 pers_layout_cond=None, pano_layout_cond=None):
