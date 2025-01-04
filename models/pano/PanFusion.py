@@ -12,7 +12,6 @@ from torch.distributed.fsdp.wrap import wrap
 from utils.fsdpstrategy import CustomFSDPStrategy
 from torch.distributed.fsdp import MixedPrecision
 from torch.distributed.fsdp.wrap import always_wrap_policy
-from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 
 
 class PanFusion(PanoGenerator):
@@ -37,7 +36,7 @@ class PanFusion(PanoGenerator):
             base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
             # for param in base_model.parameters():
             #     param.data = param.data.to(torch.float32)  # or torch.float16 based on your setup
-            self.mv_base_model = wrap(base_model, mixed_precision=mixed_precision_config)
+            self.mv_base_model = wrap(base_model, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
          
             # for name, buffer in self.mv_base_model.named_buffers():
             #     # Fix buffer names by replacing invalid characters

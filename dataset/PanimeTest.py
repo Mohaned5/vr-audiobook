@@ -31,12 +31,25 @@ class PanimeDataset(PanoDataset):
             pano_filename = os.path.basename(sample["pano"])
             pano_id = os.path.splitext(pano_filename)[0]
 
-            # We'll store everything we need in a single dict
+            # Define paths
+            pano_path = os.path.join(self.data_dir, sample["pano"])
+            images_paths = [os.path.join(self.data_dir, img) for img in sample["images"]]
+
+            # Check if all paths exist
+            if not os.path.exists(pano_path):
+                print(f"Skipping entry {pano_id}: pano file missing at {pano_path}")
+                continue
+
+            if not all(os.path.exists(img_path) for img_path in images_paths):
+                print(f"Skipping entry {pano_id}: one or more images missing.")
+                continue
+
+            # Add valid entries
             entry = {
                 "pano_id": pano_id,
-                "pano_path": os.path.join(self.data_dir, sample["pano"]),
+                "pano_path": pano_path,
                 "pano_prompt": sample.get("pano_prompt", ""),
-                "images_paths": [os.path.join(self.data_dir, img) for img in sample["images"]],
+                "images_paths": images_paths,
                 "prompts": sample["prompts"],
                 "cameras_data": sample["cameras"]
             }
