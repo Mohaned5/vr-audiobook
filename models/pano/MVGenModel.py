@@ -51,6 +51,12 @@ class MultiViewBaseModel(nn.Module):
             self.trainable_parameters.append((list(self.unet.parameters()), 1.0))
             self.trainable_parameters.append((list(self.pano_unet.parameters()), 1.0))
 
+            for name, param in self.named_parameters():
+                is_in_trainable = any(id(param) == id(p) for group in self.trainable_parameters for p in group[0])
+                if param.requires_grad and not is_in_trainable:
+                    print(f"Parameter: {name}, Requires Grad: {param.requires_grad}, In trainable_params: {is_in_trainable}")
+
+
     def forward(self, latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,
                 pers_layout_cond=None, pano_layout_cond=None):
         # bs*m, 4, 64, 64
