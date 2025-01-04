@@ -3,13 +3,21 @@ import torch.nn as nn
 from .modules import WarpAttn
 from einops import rearrange
 from utils.pano import pad_pano, unpad_pano
-
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp.wrap import always_wrap_policy
 
 class MultiViewBaseModel(nn.Module):
     def __init__(self, unet, pano_unet, pers_cn=None, pano_cn=None, pano_pad=True):
         super().__init__()
 
-        self.unet = unet
+        mixed_precision_config = MixedPrecision(
+        param_dtype=torch.float32,  # Parameters in FP32
+        reduce_dtype=torch.float32,  # Gradients in FP32
+        buffer_dtype=torch.float32   # Buffers in FP32
+        )
+
+        # Wrap unet with FSDP
+        self.unet = wrap(unet, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
         self.pano_unet = pano_unet
         self.pers_cn = pers_cn
         self.pano_cn = pano_cn
