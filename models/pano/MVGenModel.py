@@ -21,6 +21,9 @@ class MultiViewBaseModel(nn.Module):
         # Wrap unet with FSDP
         self.unet = wrap(unet, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
         self.pano_unet = wrap(pano_unet, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
+        print(f"Unet trainable params: {list(self.unet.parameters())}")
+        print(f"Pano_Unet trainable params: {list(self.pano_unet.parameters())}")
+
         self.pers_cn = pers_cn
         self.pano_cn = pano_cn
         self.pano_pad = pano_pad
@@ -41,48 +44,12 @@ class MultiViewBaseModel(nn.Module):
                     self.cp_blocks_decoder.append(WarpAttn(
                         upsample_block.upsamplers[0].channels))
 
-                        # Use a set to track seen parameters
-            seen_params = set()
-
-            # Collect trainable parameters, starting with the primary groups
             self.trainable_parameters = [
-                (
-                    [
-                        p for p in (
-                            list(self.cp_blocks_mid.parameters()) +
-                            list(self.cp_blocks_decoder.parameters()) +
-                            list(self.cp_blocks_encoder.parameters()) +
-                            list(self.unet.parameters())
-                        )
-                        if id(p) not in seen_params  # Exclude duplicates
-                    ],
-                    1.0
-                )
+                (list(self.cp_blocks_mid.parameters()) +
+                 list(self.cp_blocks_decoder.parameters()) +
+                 list(self.cp_blocks_encoder.parameters()) +
+                 list(self.unet.parameters()), 1.0)
             ]
-
-            # Update the set of seen parameters
-            seen_params.update(id(p) for p in self.trainable_parameters[0][0])
-
-            # Append unique parameters from unet
-            self.trainable_parameters.append((
-                [p for p in self.unet.parameters() if id(p) not in seen_params],
-                1.0
-            ))
-            seen_params.update(id(p) for p in self.trainable_parameters[-1][0])
-
-            # Append unique parameters from pano_unet
-            self.trainable_parameters.append((
-                [p for p in self.pano_unet.parameters() if id(p) not in seen_params],
-                1.0
-            ))
-            seen_params.update(id(p) for p in self.trainable_parameters[-1][0])
-
-
-            for name, param in self.named_parameters():
-                is_in_trainable = any(id(param) == id(p) for group in self.trainable_parameters for p in group[0])
-                if param.requires_grad and not is_in_trainable:
-                    print(f"Parameter: {name}, Requires Grad: {param.requires_grad}, In trainable_params: {is_in_trainable}")
-
 
     def forward(self, latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,
                 pers_layout_cond=None, pano_layout_cond=None):
