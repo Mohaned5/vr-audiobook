@@ -297,6 +297,9 @@ class PanoGenerator(PanoBase):
     def configure_optimizers(self):
         param_groups = []
         for params, lr_scale in self.trainable_params:
+            if not params:
+                raise ValueError("trainable_params contains an empty parameter list.")
+      
             param_groups.append({"params": params, "lr": self.hparams.lr * lr_scale})
         optimizer = torch.optim.AdamW(param_groups)
         if self.hparams.layout_cond:
