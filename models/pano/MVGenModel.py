@@ -5,15 +5,17 @@ from einops import rearrange
 from utils.pano import pad_pano, unpad_pano
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp.wrap import always_wrap_policy
+from torch.distributed.fsdp.wrap import wrap
+from torch.distributed.fsdp import MixedPrecision
 
 class MultiViewBaseModel(nn.Module):
     def __init__(self, unet, pano_unet, pers_cn=None, pano_cn=None, pano_pad=True):
         super().__init__()
 
         mixed_precision_config = MixedPrecision(
-        param_dtype=torch.float32,  # Parameters in FP32
-        reduce_dtype=torch.float32,  # Gradients in FP32
-        buffer_dtype=torch.float32   # Buffers in FP32
+            param_dtype=torch.float32,  # Parameters in FP32
+            reduce_dtype=torch.float32,  # Gradients in FP32
+            buffer_dtype=torch.float32   # Buffers in FP32
         )
 
         # Wrap unet with FSDP
