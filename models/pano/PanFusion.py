@@ -37,10 +37,10 @@ class PanFusion(PanoGenerator):
             for param in base_model.parameters():
                 param.data = param.data.to(torch.float32)  # or torch.float16 based on your setup
             self.mv_base_model = wrap(base_model, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
-            for name, param in self.mv_base_model.named_parameters():
-                is_in_trainable = any(param in group[0] for group in self.trainable_params)
-                if param.requires_grad and not is_in_trainable:
-                    print(f"Parameter: {name}, Requires Grad: {param.requires_grad}, In trainable_params: {is_in_trainable}")
+            # for name, param in self.mv_base_model.named_parameters():
+            #     is_in_trainable = any(param in group[0] for group in self.trainable_params)
+            #     if param.requires_grad and not is_in_trainable:
+            #         print(f"Parameter: {name}, Requires Grad: {param.requires_grad}, In trainable_params: {is_in_trainable}")
 
             if not self.hparams.layout_cond:
                 self.trainable_params.extend(self.mv_base_model.trainable_parameters)
