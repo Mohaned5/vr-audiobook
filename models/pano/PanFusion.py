@@ -38,7 +38,9 @@ class PanFusion(PanoGenerator):
             #     param.data = param.data.to(torch.float32)  # or torch.float16 based on your setup
             self.mv_base_model = wrap(base_model, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
             for name, param in self.mv_base_model.named_parameters():
-                print(name, param.requires_grad)
+                if not param.requires_grad:
+                    print(f"Parameter: {name} has requires_grad=False")
+
             # for name, buffer in self.mv_base_model.named_buffers():
             #     # Fix buffer names by replacing invalid characters
             #     sanitized_name = name.replace('.', '_')
