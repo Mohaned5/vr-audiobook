@@ -34,25 +34,16 @@ class PanFusion(PanoGenerator):
                 buffer_dtype=torch.float32   # Buffers in FP16
             )
             base_model = MultiViewBaseModel(unet, pano_unet, pers_cn, cn, self.hparams.unet_pad)
-            # for param in base_model.parameters():
-            #     param.data = param.data.to(torch.float32)  # or torch.float16 based on your setup
+            for param in base_model.parameters():
+                param.data = param.data.to(torch.float32)  # or torch.float16 based on your setup
             self.mv_base_model = wrap(base_model, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
-            # for name, param in self.mv_base_model.named_parameters():
-            #     is_in_trainable = any(id(param) == id(p) for group in self.trainable_params for p in group[0])
-            #     if param.requires_grad and not is_in_trainable:
-            #         print(f"Parameter: {name}, Requires Grad: {param.requires_grad}, In trainable_params: {is_in_trainable}")
-
-
-            # for name, buffer in self.mv_base_model.named_buffers():
-            #     # Fix buffer names by replacing invalid characters
-            #     sanitized_name = name.replace('.', '_')
-            #     self.mv_base_model.register_buffer(sanitized_name, buffer.to(torch.float16))  # or torch.float16
+            for name, param in self.mv_base_model.named_parameters():
+                is_in_trainable = any(param in group[0] for group in self.trainable_params)
+                if param.requires_grad and not is_in_trainable:
+                    print(f"Parameter: {name}, Requires Grad: {param.requires_grad}, In trainable_params: {is_in_trainable}")
 
             if not self.hparams.layout_cond:
-                self.trainable_params.extend(list(self.mv_base_model.trainable_parameters()))
-                print(self.trainable_params)
-
-
+                self.trainable_params.extend(self.mv_base_model.trainable_parameters)
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
         cameras = {k: rearrange(v, 'b m ... -> (b m) ...') for k, v in cameras.items()}

@@ -3,28 +3,14 @@ import torch.nn as nn
 from .modules import WarpAttn
 from einops import rearrange
 from utils.pano import pad_pano, unpad_pano
-from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-from torch.distributed.fsdp.wrap import always_wrap_policy
-from torch.distributed.fsdp.wrap import wrap
-from torch.distributed.fsdp import MixedPrecision
-from itertools import chain
+
 
 class MultiViewBaseModel(nn.Module):
     def __init__(self, unet, pano_unet, pers_cn=None, pano_cn=None, pano_pad=True):
         super().__init__()
 
-        mixed_precision_config = MixedPrecision(
-            param_dtype=torch.float32,  # Parameters in FP32
-            reduce_dtype=torch.float32,  # Gradients in FP32
-            buffer_dtype=torch.float32   # Buffers in FP32
-        )
-
-        # Wrap unet with FSDP
-        self.unet = wrap(unet, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
-        self.pano_unet = wrap(pano_unet, auto_wrap_policy=always_wrap_policy, mixed_precision=mixed_precision_config)
-        # print(f"Unet trainable params: {list(self.unet.parameters())}")
-        # print(f"Pano_Unet trainable params: {list(self.pano_unet.parameters())}")
-
+        self.unet = unet
+        self.pano_unet = pano_unet
         self.pers_cn = pers_cn
         self.pano_cn = pano_cn
         self.pano_pad = pano_pad
@@ -45,33 +31,9 @@ class MultiViewBaseModel(nn.Module):
                     self.cp_blocks_decoder.append(WarpAttn(
                         upsample_block.upsamplers[0].channels))
 
-            # self.trainable_parameters = [
-            #     (list(self.cp_blocks_mid.parameters()) +
-            #      list(self.cp_blocks_decoder.parameters()) +
-            #      list(self.cp_blocks_encoder.parameters()) +
-            #      list(self.unet.parameters()), 1.0)
-            # ]
-
-    def trainable_parameters(self):
-        seen_params = set()
-        parameter_groups = [
-            (self.unet.parameters(), 1.0),
-            (self.pano_unet.parameters(), 1.0),
-            (self.cp_blocks_mid.parameters(), 0.1),
-            (self.cp_blocks_decoder.parameters(), 0.1),
-            (self.cp_blocks_encoder.parameters(), 0.1),
-        ]
-
-        # Filter duplicates
-        unique_groups = []
-        for params, lr_scale in parameter_groups:
-            unique_params = [p for p in params if p not in seen_params]
-            seen_params.update(unique_params)
-            if unique_params:
-                unique_groups.append((unique_params, lr_scale))
-
-        return unique_groups
-
+            self.trainable_parameters = [(list(self.cp_blocks_mid.parameters()) + \
+                list(self.cp_blocks_decoder.parameters()) + \
+                list(self.cp_blocks_encoder.parameters()), 1.0)]
 
     def forward(self, latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,
                 pers_layout_cond=None, pano_layout_cond=None):
