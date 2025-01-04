@@ -31,12 +31,11 @@ class MultiViewBaseModel(nn.Module):
                     self.cp_blocks_decoder.append(WarpAttn(
                         upsample_block.upsamplers[0].channels))
             
-            trainable_params = []
-            trainable_params.extend(self.cp_blocks_mid.parameters())
-            trainable_params.extend(self.cp_blocks_decoder.parameters())
-            trainable_params.extend(self.cp_blocks_encoder.parameters())
-
-            self.trainable_parameters = [(trainable_params, 1.0)]
+            self.trainable_parameters = [
+                (list(self.cp_blocks_mid.parameters()), 1.0),
+                (list(self.cp_blocks_decoder.parameters()), 1.0),
+                (list(self.cp_blocks_encoder.parameters()), 1.0)
+            ]
 
 
     def forward(self, latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,

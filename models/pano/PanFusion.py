@@ -46,15 +46,25 @@ class PanFusion(PanoGenerator):
             #         print(f"Parameter: {name}, Requires Grad: {param.requires_grad}, In trainable_params: {is_in_trainable}")
 
             if not self.hparams.layout_cond:
-                all_params = []
-                for name, param in self.mv_base_model.named_parameters():
-                    if param.requires_grad:
-                        all_params.append((param, 1.0))  # Using 1.0 as default learning rate scale
-                
-                # Add to trainable parameters
-                if all_params:
-                    self.trainable_params.append(all_params)
+                self.trainable_params.extend(self.mv_base_model.trainable_parameters)
             
+            self._verify_parameters()
+    
+    def _verify_parameters(self):
+        """Verify that all parameters are properly registered"""
+        trainable_param_ids = set()
+        for params, lr_scale in self.trainable_params:
+            if isinstance(params, (list, tuple)):
+                for param in params:
+                    trainable_param_ids.add(id(param))
+            else:
+                trainable_param_ids.add(id(params))
+        
+        # Check if any parameters requiring gradients are missing
+        for name, param in self.mv_base_model.named_parameters():
+            if param.requires_grad and id(param) not in trainable_param_ids:
+                print(f"Warning: Parameter {name} requires grad but is not in trainable_params")
+
 
     def init_noise(self, bs, equi_h, equi_w, pers_h, pers_w, cameras, device):
         cameras = {k: rearrange(v, 'b m ... -> (b m) ...') for k, v in cameras.items()}
