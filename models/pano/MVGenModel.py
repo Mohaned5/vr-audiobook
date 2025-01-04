@@ -48,6 +48,9 @@ class MultiViewBaseModel(nn.Module):
                  list(self.unet.parameters()), 1.0)
             ]
 
+            self.trainable_parameters.append((list(self.unet.parameters()), 1.0))
+            self.trainable_parameters.append((list(self.pano_unet.parameters()), 1.0))
+
     def forward(self, latents, pano_latent, timestep, prompt_embd, pano_prompt_embd, cameras,
                 pers_layout_cond=None, pano_layout_cond=None):
         # bs*m, 4, 64, 64
