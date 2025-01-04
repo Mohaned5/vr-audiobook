@@ -45,38 +45,67 @@ class PanFusion(PanoGenerator):
             #         print(f"Parameter: {name}, Requires Grad: {param.requires_grad}, In trainable_params: {is_in_trainable}")
 
             if not self.hparams.layout_cond:
-            # Get trainable parameters from base model components
+                # Track parameters we've already added to avoid duplicates
+                added_param_ids = set()
                 trainable_params = []
                 
-                # Add UNet parameters
-                unet_params = [p for p in self.mv_base_model.unet.parameters() if p.requires_grad]
-                if unet_params:
-                    trainable_params.append((unet_params, 1.0))
-                
-                # Add Pano UNet parameters
-                pano_unet_params = [p for p in self.mv_base_model.pano_unet.parameters() if p.requires_grad]
-                if pano_unet_params:
-                    trainable_params.append((pano_unet_params, 1.0))
-                
-                # Add cross-attention block parameters
+                # First add cross-attention block parameters if they exist
                 if hasattr(self.mv_base_model, 'trainable_parameters'):
-                    trainable_params.extend(self.mv_base_model.trainable_parameters)
+                    for params, lr_scale in self.mv_base_model.trainable_parameters:
+                        param_list = list(params) if isinstance(params, (list, tuple)) else [params]
+                        new_params = []
+                        for p in param_list:
+                            if id(p) not in added_param_ids and p.requires_grad:
+                                new_params.append(p)
+                                added_param_ids.add(id(p))
+                        if new_params:
+                            trainable_params.append((new_params, lr_scale))
+                
+                # Add remaining UNet parameters that haven't been added yet
+                remaining_unet_params = []
+                for name, param in self.mv_base_model.unet.named_parameters():
+                    if param.requires_grad and id(param) not in added_param_ids:
+                        remaining_unet_params.append(param)
+                        added_param_ids.add(id(param))
+                if remaining_unet_params:
+                    trainable_params.append((remaining_unet_params, 1.0))
+                
+                # Add remaining Pano UNet parameters that haven't been added yet
+                remaining_pano_params = []
+                for name, param in self.mv_base_model.pano_unet.named_parameters():
+                    if param.requires_grad and id(param) not in added_param_ids:
+                        remaining_pano_params.append(param)
+                        added_param_ids.add(id(param))
+                if remaining_pano_params:
+                    trainable_params.append((remaining_pano_params, 1.0))
                 
                 self.trainable_params.extend(trainable_params)
             
+            # Verify parameter registration
             self._verify_parameters()
     
     def _verify_parameters(self):
         """Verify that all parameters are properly registered"""
         trainable_param_ids = set()
+        param_count = {}  # Track how many times each parameter appears
+        
         for params, lr_scale in self.trainable_params:
             if isinstance(params, (list, tuple)):
                 for param in params:
-                    trainable_param_ids.add(id(param))
+                    param_id = id(param)
+                    trainable_param_ids.add(param_id)
+                    param_count[param_id] = param_count.get(param_id, 0) + 1
             else:
-                trainable_param_ids.add(id(params))
+                param_id = id(params)
+                trainable_param_ids.add(param_id)
+                param_count[param_id] = param_count.get(param_id, 0) + 1
         
-        # Check if any parameters requiring gradients are missing
+        # Check for duplicates
+        for param_id, count in param_count.items():
+            if count > 1:
+                print(f"Warning: Parameter appears {count} times in trainable_params")
+        
+        # Check for missing parameters
         for name, param in self.mv_base_model.named_parameters():
             if param.requires_grad and id(param) not in trainable_param_ids:
                 print(f"Warning: Parameter {name} requires grad but is not in trainable_params")
