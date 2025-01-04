@@ -7,6 +7,7 @@ from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp.wrap import always_wrap_policy
 from torch.distributed.fsdp.wrap import wrap
 from torch.distributed.fsdp import MixedPrecision
+from itertools import chain
 
 class MultiViewBaseModel(nn.Module):
     def __init__(self, unet, pano_unet, pers_cn=None, pano_cn=None, pano_pad=True):
